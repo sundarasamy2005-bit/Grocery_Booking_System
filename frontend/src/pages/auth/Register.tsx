@@ -1,0 +1,283 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { createUserWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
+import { auth, googleProvider } from '../../config/firebase';
+import { useAuthStore } from '../../store/authStore';
+import {
+  ShoppingBag,
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Loader2,
+  ShoppingCart,
+  Store,
+  CheckCircle2,
+  Sparkles
+} from 'lucide-react';
+
+const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  role: z.enum(['customer', 'shopOwner']).default('customer'),
+});
+type RegisterForm = z.infer<typeof registerSchema>;
+
+const Register = () => {
+  const navigate = useNavigate();
+  const { syncUser } = useAuthStore();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema) as any,
+    defaultValues: { role: 'customer' },
+  });
+  const selectedRole = watch('role');
+
+  const onSubmit = async (data: RegisterForm) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Save role into sessionStorage to avoid any async race conditions with onAuthStateChanged
+      sessionStorage.setItem('pending_registration_role', data.role);
+      sessionStorage.setItem('pending_registration_name', data.name);
+
+      // 1. Create account with Firebase Auth
+      await createUserWithEmailAndPassword(auth, data.email, data.password);
+
+      // 2. Synchronize account to MongoDB with the chosen role (creates shop if shopOwner)
+      const syncedUser = await syncUser({ name: data.name, role: data.role });
+
+      // 3. Sign out of Firebase so user lands on login page to sign in and view their role interface
+      await signOut(auth);
+      useAuthStore.setState({ user: null, isAuthenticated: false });
+
+      // 4. Automatically navigate to /login with prefilled credentials & role state
+      navigate('/login', {
+        replace: true,
+        state: {
+          email: data.email,
+          password: data.password,
+          role: syncedUser?.role || data.role,
+          name: data.name,
+          justRegistered: true,
+        },
+      });
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      let message = err.message || 'Failed to register account';
+      if (err.code === 'auth/email-already-in-use') {
+        message = 'This email is already registered. Please sign in instead.';
+      } else if (err.code === 'auth/weak-password') {
+        message = 'Password must be at least 6 characters long.';
+      }
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleRegister = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      sessionStorage.setItem('pending_registration_role', selectedRole);
+      await signInWithPopup(auth, googleProvider);
+      const syncedUser = await syncUser({ role: selectedRole });
+
+      // Google OAuth users are immediately authenticated, open their role-based interface
+      if (syncedUser?.role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (syncedUser?.role === 'shopOwner') {
+        navigate('/shop/dashboard', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    } catch (err: any) {
+      console.error('Google register error:', err);
+      setError(err.message || 'Failed to register with Google');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-primary-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md animate-scale-in">
+        <div className="card p-8 shadow-xl border border-gray-100">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl gradient-primary shadow-lg mb-4 animate-float">
+              <ShoppingBag size={28} className="text-white" />
+            </div>
+            <h2 className="text-2xl font-extrabold text-gray-900">Create your account</h2>
+            <p className="text-gray-500 text-sm mt-1">Join LocalGrocery for free today</p>
+          </div>
+
+          {error && (
+            <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 animate-scale-in flex items-start gap-2">
+              <span className="shrink-0 text-red-500 font-bold">⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
+            {/* Role Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">I want to...</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setValue('role', 'customer')}
+                  className={`flex flex-col items-center gap-2 p-3.5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                    selectedRole === 'customer'
+                      ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-2xs font-bold'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <ShoppingCart size={22} className={selectedRole === 'customer' ? 'text-primary-600' : 'text-gray-400'} />
+                  <span>Shop as Customer</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setValue('role', 'shopOwner')}
+                  className={`flex flex-col items-center gap-2 p-3.5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                    selectedRole === 'shopOwner'
+                      ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-2xs font-bold'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <Store size={22} className={selectedRole === 'shopOwner' ? 'text-primary-600' : 'text-gray-400'} />
+                  <span>Register My Shop</span>
+                </button>
+              </div>
+
+              {/* Informative helper text for the selected role */}
+              <div className="mt-2.5 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-600 flex items-center gap-2">
+                <Sparkles size={14} className="text-primary-600 shrink-0" />
+                <span>
+                  {selectedRole === 'shopOwner'
+                    ? 'Includes merchant dashboard, order management, AI demand forecasts & stock alerts.'
+                    : 'Discover nearby grocery shops, browse fresh catalog, and place local delivery orders.'}
+                </span>
+              </div>
+            </div>
+
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  {...register('name')}
+                  type="text"
+                  placeholder="e.g. Gokul"
+                  className="input-field pl-10"
+                />
+              </div>
+              {errors.name && <p className="mt-1.5 text-xs text-red-600">⚠ {errors.name.message}</p>}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  {...register('email')}
+                  type="email"
+                  placeholder="you@example.com"
+                  className="input-field pl-10"
+                />
+              </div>
+              {errors.email && <p className="mt-1.5 text-xs text-red-600">⚠ {errors.email.message}</p>}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  {...register('password')}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Min. 6 characters"
+                  className="input-field pl-10 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1.5 text-xs text-red-600">⚠ {errors.password.message}</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full btn-primary py-3.5 rounded-xl text-base font-bold disabled:opacity-60 mt-2"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 size={18} className="animate-spin" /> Creating account...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  Create Account <ArrowRight size={18} />
+                </span>
+              )}
+            </button>
+          </form>
+
+          <div className="my-5 flex items-center gap-4">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400 font-medium">OR</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <button
+            onClick={handleGoogleRegister}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 cursor-pointer"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+            </svg>
+            Sign up with Google
+          </button>
+
+          <p className="mt-5 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link to="/login" className="font-bold text-primary-600 hover:text-primary-700 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Register;
