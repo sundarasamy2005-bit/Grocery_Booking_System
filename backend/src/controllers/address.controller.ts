@@ -115,7 +115,7 @@ export const addressController = {
       const address = await Address.findOneAndUpdate(
         { _id: req.params.id, userId },
         { isDefault: true },
-        { new: true }
+        { returnDocument: 'after' }
       );
       if (!address) {
         res.status(404).json({ success: false, message: 'Address not found' });

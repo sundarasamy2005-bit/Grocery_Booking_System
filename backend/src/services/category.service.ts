@@ -118,7 +118,7 @@ export const ensureDefaultCategories = async (): Promise<void> => {
             isActive: true,
           },
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
     }
     console.log('✅ Default product categories ensured in MongoDB (including all 10 specialized categories)');

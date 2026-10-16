@@ -77,7 +77,7 @@ export const categoryController = {
         const result = await uploadService.uploadCategoryImage(req.file.buffer);
         updateData.image = result.url;
       }
-      const category = await Category.findByIdAndUpdate(req.params.id, updateData, { new: true });
+      const category = await Category.findByIdAndUpdate(req.params.id, updateData, { returnDocument: 'after' });
       if (!category) {
         res.status(404).json({ success: false, message: 'Category not found' });
         return;

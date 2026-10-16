@@ -535,7 +535,7 @@ export const shopAiController = {
       const updated = await ShopAutomation.findOneAndUpdate(
         { shopId: shop._id.toString() },
         { $set: updatePayload },
-        { new: true, upsert: true }
+        { returnDocument: 'after', upsert: true }
       );
 
       res.json({

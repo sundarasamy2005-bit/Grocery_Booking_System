@@ -106,7 +106,7 @@ export const adminController = {
       // Admin can change role but not to admin via this endpoint for safety
       if (role && ['customer', 'shopOwner'].includes(role)) update.role = role;
 
-      const user = await User.findByIdAndUpdate(req.params.id, update, { new: true });
+      const user = await User.findByIdAndUpdate(req.params.id, update, { returnDocument: 'after' });
       if (!user) {
         res.status(404).json({ success: false, message: 'User not found' });
         return;
@@ -168,7 +168,7 @@ export const adminController = {
       if (isApproved !== undefined) update.isApproved = isApproved;
       if (isActive !== undefined) update.isActive = isActive;
 
-      const shop = await Shop.findByIdAndUpdate(req.params.id, update, { new: true });
+      const shop = await Shop.findByIdAndUpdate(req.params.id, update, { returnDocument: 'after' });
       if (!shop) {
         res.status(404).json({ success: false, message: 'Shop not found' });
         return;

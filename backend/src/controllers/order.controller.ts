@@ -227,9 +227,8 @@ export const orderController = {
       }
 
       // Clear user cart
-      await Cart.findOneAndUpdate(
+      await Cart.deleteOne(
         { userId: user._id.toString() },
-        { items: [], shopId: undefined, subtotal: 0 },
         { session }
       );
 
