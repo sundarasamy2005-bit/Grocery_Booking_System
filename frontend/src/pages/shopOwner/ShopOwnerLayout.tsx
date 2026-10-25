@@ -13,9 +13,9 @@ import ShopAutomation from './ShopAutomation';
 import ShopSettings from './ShopSettings';
 
 const Placeholder = ({ name }: { name: string }) => (
-  <div className="bg-white shadow rounded-lg p-6">
-    <h2 className="text-lg font-medium text-gray-900 mb-4">{name}</h2>
-    <p className="text-gray-500">This feature is under construction.</p>
+  <div className="bg-white dark:bg-[#172033] shadow rounded-lg p-6 border border-gray-100 dark:border-[#2D3748]">
+    <h2 className="text-lg font-medium text-gray-900 dark:text-[#F9FAFB] mb-4">{name}</h2>
+    <p className="text-gray-500 dark:text-[#A7B3C5]">This feature is under construction.</p>
   </div>
 );
 
@@ -43,10 +43,10 @@ const ShopOwnerLayout = () => {
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}
           <div className="w-full md:w-64 flex-shrink-0">
-            <div className="bg-white shadow-xs rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="p-4 bg-gray-50 border-b border-gray-200">
-                <h2 className="font-bold text-gray-900 text-sm">Shop Management</h2>
-                <p className="text-[11px] text-gray-500">Store controls & automated intelligence</p>
+            <div className="bg-white dark:bg-[#172033] shadow-xs rounded-2xl border border-gray-200 dark:border-[#2D3748] overflow-hidden">
+              <div className="p-4 bg-gray-50 dark:bg-[#111827] border-b border-gray-200 dark:border-[#2D3748]">
+                <h2 className="font-bold text-gray-900 dark:text-[#F9FAFB] text-sm">Shop Management</h2>
+                <p className="text-[11px] text-gray-500 dark:text-[#A7B3C5]">Store controls & automated intelligence</p>
               </div>
               <nav className="p-2 space-y-1">
                 {navigation.map((item) => {
@@ -59,13 +59,13 @@ const ShopOwnerLayout = () => {
                       to={item.href}
                       className={`flex items-center px-3 py-2.5 text-xs font-semibold rounded-xl transition-all ${
                         isActive
-                          ? 'bg-primary-50 text-primary-700 shadow-2xs font-bold'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-emerald-50 dark:bg-[#12352D] text-emerald-700 dark:text-emerald-300 shadow-2xs font-bold'
+                          : 'text-gray-700 dark:text-[#A7B3C5] hover:bg-gray-50 dark:hover:bg-[#111827] hover:text-gray-900 dark:hover:text-[#F9FAFB]'
                       }`}
                     >
                       <item.icon
                         className={`mr-3 flex-shrink-0 h-4 w-4 ${
-                          isActive ? 'text-primary-600' : 'text-gray-400'
+                          isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-slate-500'
                         }`}
                       />
                       {item.name}

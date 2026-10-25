@@ -1,4 +1,11 @@
 import 'dotenv/config';
+import dns from 'dns';
+
+// Force Node to prioritize IPv4 DNS lookups to avoid NAT64/IPv6 timeouts on local networks
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -20,6 +27,7 @@ import cartRoutes from './routes/cart.routes';
 import orderRoutes from './routes/order.routes';
 import addressRoutes from './routes/address.routes';
 import adminRoutes from './routes/admin.routes';
+import reviewRoutes from './routes/review.routes';
 import aiRoutes from './routes/ai.routes';
 import shopAiRoutes from './routes/shopAi.routes';
 import { automationService } from './services/automation.service';
@@ -48,7 +56,7 @@ app.use(cors({
 // ─── Rate Limiting ────────────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  max: process.env.NODE_ENV === 'production' ? 500 : 5000,
   message: { success: false, message: 'Too many requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -92,6 +100,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/shops', shopRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);

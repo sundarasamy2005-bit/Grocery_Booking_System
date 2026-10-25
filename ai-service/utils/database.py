@@ -1,5 +1,15 @@
+import dns.resolver
 from pymongo import MongoClient
 from config.settings import settings
+
+# Configure resilient DNS resolution for MongoDB Atlas SRV lookups on local networks/Windows
+try:
+    resolver = dns.resolver.get_default_resolver()
+    for ns in ['8.8.8.8', '1.1.1.1', '8.8.4.4']:
+        if ns not in resolver.nameservers:
+            resolver.nameservers.insert(0, ns)
+except Exception as dns_err:
+    print(f"⚠️ DNS resolver configuration warning: {dns_err}")
 
 client = None
 db = None
@@ -7,7 +17,7 @@ db = None
 def get_db():
     global client, db
     if db is None:
-        client = MongoClient(settings.MONGODB_URI, serverSelectionTimeoutMS=5000)
+        client = MongoClient(settings.MONGODB_URI, serverSelectionTimeoutMS=8000)
         db_name = settings.DB_NAME or "test"
         try:
             default_db = client.get_default_database()

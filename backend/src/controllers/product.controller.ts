@@ -21,7 +21,7 @@ export const productController = {
       } = req.query as Record<string, string>;
 
       const pageNum = Math.max(1, parseInt(page));
-      const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+      const limitNum = Math.min(250, Math.max(1, parseInt(limit)));
       const skip = (pageNum - 1) * limitNum;
 
       const filter: Record<string, unknown> = {};
@@ -70,7 +70,7 @@ export const productController = {
       const product = await Product.findById(req.params.id)
         .select('-__v')
         .populate('categoryId', 'name slug')
-        .populate('shopId', 'shopName city isApproved isActive')
+        .populate('shopId', 'shopName city address rating deliveryOptions imageUrl isOpen isApproved isActive phone email')
         .lean();
 
       if (!product) {

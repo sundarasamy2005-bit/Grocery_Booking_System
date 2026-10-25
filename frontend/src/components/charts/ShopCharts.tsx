@@ -58,27 +58,27 @@ export const SalesLineChart: React.FC<SalesLineChartProps> = ({ data, days, onDa
   const hovered = hoveredIndex !== null ? points[hoveredIndex] : null;
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-xs space-y-4 w-full overflow-hidden">
+    <div className="bg-white dark:bg-[#172033] rounded-3xl p-6 border border-gray-200 dark:border-[#2D3748] shadow-xs space-y-4 w-full overflow-hidden">
       {/* Header & Range Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-sky-50 text-sky-600 rounded-xl">
+            <div className="p-2 bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 rounded-xl">
               <TrendingUp size={18} />
             </div>
-            <h3 className="font-extrabold text-base text-gray-900">Day by Day Sales Velocity</h3>
+            <h3 className="font-extrabold text-base text-gray-900 dark:text-[#F9FAFB]">Day by Day Sales Velocity</h3>
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">Real-time revenue progression and order density line graph</p>
+          <p className="text-xs text-gray-500 dark:text-[#A7B3C5] mt-0.5">Real-time revenue progression and order density line graph</p>
         </div>
 
         {/* Days Toggle */}
-        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#111827] p-1 rounded-xl self-start sm:self-auto">
           {[7, 14, 30].map((d) => (
             <button
               key={d}
               onClick={() => onDaysChange(d)}
               className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                days === d ? 'bg-white text-primary-700 shadow-2xs' : 'text-gray-500 hover:text-gray-900'
+                days === d ? 'bg-white dark:bg-[#172033] text-emerald-700 dark:text-emerald-400 shadow-2xs' : 'text-gray-500 dark:text-[#A7B3C5] hover:text-gray-900 dark:hover:text-[#F9FAFB]'
               }`}
             >
               Last {d}D
@@ -89,17 +89,17 @@ export const SalesLineChart: React.FC<SalesLineChartProps> = ({ data, days, onDa
 
       {/* KPI Chips */}
       <div className="grid grid-cols-3 gap-3 pt-1">
-        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-          <p className="text-[10px] uppercase font-bold text-gray-400">Total Period Revenue</p>
-          <p className="text-lg font-black text-gray-900 mt-0.5">₹{totalRevenue.toLocaleString('en-IN')}</p>
+        <div className="bg-slate-50 dark:bg-[#111827] p-3 rounded-2xl border border-slate-100 dark:border-[#2D3748]">
+          <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-[#A7B3C5]">Total Period Revenue</p>
+          <p className="text-lg font-black text-gray-900 dark:text-[#F9FAFB] mt-0.5">₹{totalRevenue.toLocaleString('en-IN')}</p>
         </div>
-        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-          <p className="text-[10px] uppercase font-bold text-gray-400">Average Daily Revenue</p>
-          <p className="text-lg font-black text-sky-700 mt-0.5">₹{avgDaily.toLocaleString('en-IN')}</p>
+        <div className="bg-slate-50 dark:bg-[#111827] p-3 rounded-2xl border border-slate-100 dark:border-[#2D3748]">
+          <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-[#A7B3C5]">Average Daily Revenue</p>
+          <p className="text-lg font-black text-sky-700 dark:text-sky-400 mt-0.5">₹{avgDaily.toLocaleString('en-IN')}</p>
         </div>
-        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-          <p className="text-[10px] uppercase font-bold text-gray-400">Total Orders Placed</p>
-          <p className="text-lg font-black text-emerald-700 mt-0.5">{totalOrders} orders</p>
+        <div className="bg-slate-50 dark:bg-[#111827] p-3 rounded-2xl border border-slate-100 dark:border-[#2D3748]">
+          <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-[#A7B3C5]">Total Orders Placed</p>
+          <p className="text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5">{totalOrders} orders</p>
         </div>
       </div>
 
@@ -192,10 +192,10 @@ interface StockAnalysisBarChartProps {
 export const StockAnalysisBarChart: React.FC<StockAnalysisBarChartProps> = ({ items, threshold }) => {
   if (!items || items.length === 0) {
     return (
-      <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-xs text-center">
+      <div className="bg-white dark:bg-[#172033] rounded-3xl p-6 border border-gray-200 dark:border-[#2D3748] shadow-xs text-center">
         <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-        <h4 className="font-bold text-sm text-gray-900">Inventory Well Stocked</h4>
-        <p className="text-xs text-gray-500 mt-1">All catalog items have stock levels exceeding {threshold} units.</p>
+        <h4 className="font-bold text-sm text-gray-900 dark:text-[#F9FAFB]">Inventory Well Stocked</h4>
+        <p className="text-xs text-gray-500 dark:text-[#A7B3C5] mt-1">All catalog items have stock levels exceeding {threshold} units.</p>
       </div>
     );
   }
@@ -203,21 +203,21 @@ export const StockAnalysisBarChart: React.FC<StockAnalysisBarChartProps> = ({ it
   const maxScale = Math.max(...items.map((i) => i.stock), threshold * 1.5, 20);
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-xs space-y-4 w-full overflow-hidden">
+    <div className="bg-white dark:bg-[#172033] rounded-3xl p-6 border border-gray-200 dark:border-[#2D3748] shadow-xs space-y-4 w-full overflow-hidden">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+          <div className="p-2 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-xl">
             <AlertTriangle size={18} />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-gray-900">Low Stock Inventory Analysis</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Horizontal bar breakdown comparing current units against safety threshold ({threshold} units)</p>
+            <h3 className="font-extrabold text-base text-gray-900 dark:text-[#F9FAFB]">Low Stock Inventory Analysis</h3>
+            <p className="text-xs text-gray-500 dark:text-[#A7B3C5] mt-0.5">Horizontal bar breakdown comparing current units against safety threshold ({threshold} units)</p>
           </div>
         </div>
 
         <Link
           to="/shop/products"
-          className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
+          className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
         >
           <span>Restock Catalog</span>
           <ArrowUpRight size={14} />
@@ -225,7 +225,7 @@ export const StockAnalysisBarChart: React.FC<StockAnalysisBarChartProps> = ({ it
       </div>
 
       {/* Threshold Reference Indicator */}
-      <div className="flex items-center gap-4 text-xs font-semibold text-gray-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+      <div className="flex items-center gap-4 text-xs font-semibold text-gray-500 dark:text-[#A7B3C5] bg-slate-50 dark:bg-[#111827] p-2.5 rounded-xl border border-slate-100 dark:border-[#2D3748]">
         <div className="flex items-center gap-1.5">
           <div className="h-3 w-3 rounded-full bg-rose-500"></div>
           <span>Critical (0–3 units)</span>
@@ -234,7 +234,7 @@ export const StockAnalysisBarChart: React.FC<StockAnalysisBarChartProps> = ({ it
           <div className="h-3 w-3 rounded-full bg-amber-500"></div>
           <span>Low (4–{threshold} units)</span>
         </div>
-        <div className="flex items-center gap-1.5 ml-auto text-[11px] text-gray-400">
+        <div className="flex items-center gap-1.5 ml-auto text-[11px] text-gray-400 dark:text-[#A7B3C5]">
           Safety Buffer Line: {threshold} units
         </div>
       </div>
@@ -246,29 +246,29 @@ export const StockAnalysisBarChart: React.FC<StockAnalysisBarChartProps> = ({ it
           const thresholdPercent = Math.min(100, (item.threshold / maxScale) * 100);
 
           let barColor = 'bg-emerald-500';
-          let textColor = 'text-emerald-700';
+          let textColor = 'text-emerald-700 dark:text-emerald-400';
           if (item.status === 'critical') {
             barColor = 'bg-rose-500';
-            textColor = 'text-rose-700';
+            textColor = 'text-rose-700 dark:text-rose-400';
           } else if (item.status === 'low') {
             barColor = 'bg-amber-500';
-            textColor = 'text-amber-700';
+            textColor = 'text-amber-700 dark:text-amber-400';
           }
 
           return (
             <div key={item.id} className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-gray-800 truncate max-w-[200px]">{item.name}</span>
+                <span className="font-bold text-gray-800 dark:text-[#F9FAFB] truncate max-w-[200px]">{item.name}</span>
                 <div className="flex items-center gap-2">
                   <span className={`font-black ${textColor}`}>
                     {item.stock} {item.unit}
                   </span>
-                  <span className="text-[10px] text-gray-400">₹{item.price}/{item.unit}</span>
+                  <span className="text-[10px] text-gray-400 dark:text-[#A7B3C5]">₹{item.price}/{item.unit}</span>
                 </div>
               </div>
 
               {/* Bar track */}
-              <div className="relative h-4 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div className="relative h-4 w-full bg-gray-100 dark:bg-[#111827] rounded-full overflow-hidden">
                 {/* Safety threshold vertical line */}
                 <div
                   className="absolute top-0 bottom-0 w-0.5 bg-rose-300 z-10"
@@ -338,7 +338,7 @@ export const CustomerGrowthHistogram: React.FC<CustomerGrowthHistogramProps> = (
 
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-xs text-center text-gray-400 text-xs">
+      <div className="bg-white dark:bg-[#172033] rounded-3xl p-6 border border-gray-200 dark:border-[#2D3748] shadow-xs text-center text-gray-400 dark:text-[#A7B3C5] text-xs">
         No customer growth data available.
       </div>
     );
@@ -351,55 +351,55 @@ export const CustomerGrowthHistogram: React.FC<CustomerGrowthHistogramProps> = (
   const repeatRate = totalCombined > 0 ? Math.round((totalRepeat / totalCombined) * 100) : 0;
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-xs space-y-4 w-full overflow-hidden">
+    <div className="bg-white dark:bg-[#172033] rounded-3xl p-6 border border-gray-200 dark:border-[#2D3748] shadow-xs space-y-4 w-full overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
+          <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
             <Users size={18} />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-gray-900 leading-tight">Total Customer Growth Histogram</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Chronological customer acquisition bins & repeat order frequency</p>
+            <h3 className="font-extrabold text-base text-gray-900 dark:text-[#F9FAFB] leading-tight">Total Customer Growth Histogram</h3>
+            <p className="text-xs text-gray-500 dark:text-[#A7B3C5] mt-0.5">Chronological customer acquisition bins & repeat order frequency</p>
           </div>
         </div>
 
-        <span className="text-xs font-black px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-100 self-start sm:self-auto shrink-0">
+        <span className="text-xs font-black px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-xl border border-indigo-100 dark:border-indigo-900/60 self-start sm:self-auto shrink-0">
           {uniqueCustomers} Active Shoppers
         </span>
       </div>
 
       {/* KPI stats */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <div className="bg-slate-50 p-2.5 sm:p-3 rounded-2xl border border-slate-100 min-w-0">
-          <p className="text-[10px] uppercase font-bold text-gray-400 truncate">Total Unique</p>
-          <p className="text-base sm:text-lg font-black text-gray-900 mt-0.5 truncate">{uniqueCustomers}</p>
+        <div className="bg-slate-50 dark:bg-[#111827] p-2.5 sm:p-3 rounded-2xl border border-slate-100 dark:border-[#2D3748] min-w-0">
+          <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-[#A7B3C5] truncate">Total Unique</p>
+          <p className="text-base sm:text-lg font-black text-gray-900 dark:text-[#F9FAFB] mt-0.5 truncate">{uniqueCustomers}</p>
         </div>
-        <div className="bg-slate-50 p-2.5 sm:p-3 rounded-2xl border border-slate-100 min-w-0">
-          <p className="text-[10px] uppercase font-bold text-gray-400 truncate">New Joined</p>
-          <p className="text-base sm:text-lg font-black text-indigo-700 mt-0.5 truncate">+{totalNew}</p>
+        <div className="bg-slate-50 dark:bg-[#111827] p-2.5 sm:p-3 rounded-2xl border border-slate-100 dark:border-[#2D3748] min-w-0">
+          <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-[#A7B3C5] truncate">New Joined</p>
+          <p className="text-base sm:text-lg font-black text-indigo-700 dark:text-indigo-400 mt-0.5 truncate">+{totalNew}</p>
         </div>
-        <div className="bg-slate-50 p-2.5 sm:p-3 rounded-2xl border border-slate-100 min-w-0">
-          <p className="text-[10px] uppercase font-bold text-gray-400 truncate">Repeat Rate</p>
-          <p className="text-base sm:text-lg font-black text-emerald-700 mt-0.5 truncate">{repeatRate}%</p>
+        <div className="bg-slate-50 dark:bg-[#111827] p-2.5 sm:p-3 rounded-2xl border border-slate-100 dark:border-[#2D3748] min-w-0">
+          <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-[#A7B3C5] truncate">Repeat Rate</p>
+          <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">{repeatRate}%</p>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-5 text-xs text-gray-500 pt-1">
+      <div className="flex items-center gap-5 text-xs text-gray-500 dark:text-[#A7B3C5] pt-1">
         <div className="flex items-center gap-1.5">
           <div className="h-3 w-3 rounded-xs bg-indigo-600"></div>
-          <span className="font-semibold text-gray-700">New Customers</span>
+          <span className="font-semibold text-gray-700 dark:text-[#F9FAFB]">New Customers</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="h-3 w-3 rounded-xs bg-sky-400"></div>
-          <span className="font-semibold text-gray-700">Repeat Orders</span>
+          <span className="font-semibold text-gray-700 dark:text-[#F9FAFB]">Repeat Orders</span>
         </div>
       </div>
 
       {/* Histogram Column Bars */}
       <div className="relative pt-6 w-full">
-        <div className="h-44 w-full flex items-end justify-between gap-1 sm:gap-2 px-1 sm:px-2 border-b border-gray-200">
+        <div className="h-44 w-full flex items-end justify-between gap-1 sm:gap-2 px-1 sm:px-2 border-b border-gray-200 dark:border-[#2D3748]">
           {data.map((bucket, idx) => {
             const isHovered = hoveredIdx === idx;
             const newHeight = (bucket.newCustomers / maxVal) * 140;
@@ -436,17 +436,17 @@ export const CustomerGrowthHistogram: React.FC<CustomerGrowthHistogramProps> = (
                     />
                   )}
                   {!hasNew && !hasRepeat && (
-                    <div className="w-full h-1 bg-gray-200 rounded-sm" />
+                    <div className="w-full h-1 bg-gray-200 dark:bg-slate-700 rounded-sm" />
                   )}
                 </div>
 
                 {/* Compact, clean date label */}
                 <div className="flex flex-col items-center justify-center mt-2 w-full text-center leading-none select-none">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 tracking-tight truncate w-full">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 dark:text-[#F9FAFB] tracking-tight truncate w-full">
                     {range}
                   </span>
                   {month && (
-                    <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-0.5 truncate w-full">
+                    <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 dark:text-[#A7B3C5] uppercase tracking-wider mt-0.5 truncate w-full">
                       {month}
                     </span>
                   )}

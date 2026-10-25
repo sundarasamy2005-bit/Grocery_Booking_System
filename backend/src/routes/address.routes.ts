@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { addressController } from '../controllers/address.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { requireRole } from '../middleware/role.middleware';
 
 const router = Router();
 
+// All address routes require authentication
 router.use(authMiddleware);
-router.use(requireRole('customer'));
 
+// CRUD routes for delivery addresses
 router.get('/', addressController.getAddresses);
 router.post('/', addressController.createAddress);
 router.put('/:id', addressController.updateAddress);

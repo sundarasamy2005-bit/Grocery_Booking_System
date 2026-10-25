@@ -35,17 +35,17 @@ const OrderTimeline = ({ status }: { status: string }) => {
           <div key={step} className="flex items-center">
             <div className="flex flex-col items-center">
               <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                done ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-300'
-              } ${active ? 'ring-2 ring-primary-300 ring-offset-1' : ''}`}>
+                done ? 'bg-primary-600 dark:bg-emerald-600 border-primary-600 dark:border-emerald-600' : 'bg-white dark:bg-[#111827] border-gray-300 dark:border-[#2D3748]'
+              } ${active ? 'ring-2 ring-primary-300 dark:ring-emerald-500/40 ring-offset-1 dark:ring-offset-[#172033]' : ''}`}>
                 {done && <CheckCircle size={10} className="text-white fill-white" />}
               </div>
-              <span className={`mt-1 text-[9px] font-semibold whitespace-nowrap ${done ? 'text-primary-600' : 'text-gray-400'}`}>
+              <span className={`mt-1 text-[9px] font-semibold whitespace-nowrap ${done ? 'text-primary-600 dark:text-emerald-400 font-bold' : 'text-gray-400 dark:text-[#A7B3C5]'}`}>
                 {labels[step]}
               </span>
             </div>
             {i < TIMELINE.length - 1 && (
               <div className={`h-0.5 w-6 sm:w-8 mb-3 transition-all duration-300 ${
-                !isCancelled && i < currentIdx ? 'bg-primary-600' : 'bg-gray-200'
+                !isCancelled && i < currentIdx ? 'bg-primary-600 dark:bg-emerald-600' : 'bg-gray-200 dark:bg-[#2D3748]'
               }`} />
             )}
           </div>
@@ -86,21 +86,21 @@ const Orders = () => {
       <div className="page-container py-8">
         {/* Success Banner */}
         {location.state?.orderSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl flex items-center gap-3 animate-scale-in">
-            <div className="h-10 w-10 rounded-xl bg-green-500 flex items-center justify-center flex-shrink-0">
+          <div className="mb-6 p-4 bg-green-50 dark:bg-emerald-950/40 border border-green-200 dark:border-emerald-800/60 rounded-2xl flex items-center gap-3 animate-scale-in">
+            <div className="h-10 w-10 rounded-xl bg-green-500 dark:bg-emerald-600 flex items-center justify-center flex-shrink-0">
               <CheckCircle size={20} className="text-white" />
             </div>
             <div>
-              <p className="font-bold text-green-800">Order placed successfully! 🎉</p>
-              <p className="text-xs text-green-600 mt-0.5">Order #{location.state.orderNumber} has been sent to the shop</p>
+              <p className="font-bold text-green-800 dark:text-emerald-300">Order placed successfully! 🎉</p>
+              <p className="text-xs text-green-600 dark:text-emerald-400 mt-0.5">Order #{location.state.orderNumber} has been sent to the shop</p>
             </div>
           </div>
         )}
 
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-extrabold text-gray-900">My Orders</h1>
-            <p className="text-sm text-gray-500 mt-1">{orders.length} order{orders.length !== 1 ? 's' : ''} placed</p>
+            <h1 className="text-2xl font-extrabold text-gray-900 dark:text-[#F9FAFB]">My Orders</h1>
+            <p className="text-sm text-gray-500 dark:text-[#A7B3C5] mt-1">{orders.length} order{orders.length !== 1 ? 's' : ''} placed</p>
           </div>
           <Link to="/shops" className="btn-secondary px-4 py-2 rounded-xl text-sm flex items-center gap-1.5">
             <ShoppingBag size={14} /> Shop More
@@ -112,13 +112,13 @@ const Orders = () => {
             {[1, 2, 3].map(n => <div key={n} className="h-40 skeleton rounded-2xl" />)}
           </div>
         ) : orders.length === 0 ? (
-          <div className="card p-16 text-center animate-scale-in">
-            <div className="h-24 w-24 rounded-3xl bg-primary-50 flex items-center justify-center mx-auto mb-5 animate-float">
-              <Package size={40} className="text-primary-300" />
+          <div className="card p-16 text-center animate-scale-in border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033]">
+            <div className="h-24 w-24 rounded-3xl bg-primary-50 dark:bg-[#12352D] flex items-center justify-center mx-auto mb-5 animate-float">
+              <Package size={40} className="text-primary-600 dark:text-emerald-400" />
             </div>
-            <h3 className="text-xl font-extrabold text-gray-900">No orders yet</h3>
-            <p className="text-gray-500 mt-2 text-sm">You haven't placed any orders. Discover local shops and start shopping!</p>
-            <Link to="/shops" className="btn-primary mt-6 px-8 py-3 rounded-xl inline-flex items-center gap-2">
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-[#F9FAFB]">No orders yet</h3>
+            <p className="text-gray-500 dark:text-[#A7B3C5] mt-2 text-sm">You haven't placed any orders. Discover local shops and start shopping!</p>
+            <Link to="/shops" className="btn-primary dark:bg-emerald-600 dark:hover:bg-emerald-500 mt-6 px-8 py-3 rounded-xl inline-flex items-center gap-2">
               Browse Shops <ArrowRight size={16} />
             </Link>
           </div>
@@ -127,24 +127,24 @@ const Orders = () => {
             {orders.map((order, idx) => {
               const sc = STATUS_CONFIG[order.orderStatus] || STATUS_CONFIG['placed'];
               return (
-                <div key={order._id} className={`card overflow-hidden animate-fade-in-up`} style={{ animationDelay: `${idx * 60}ms` }}>
+                <div key={order._id} className={`card overflow-hidden animate-fade-in-up border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033]`} style={{ animationDelay: `${idx * 60}ms` }}>
                   {/* Header */}
-                  <div className="px-5 py-4 bg-gray-50 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="px-5 py-4 bg-gray-50 dark:bg-[#111827] border-b border-gray-100 dark:border-[#2D3748] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className={`h-10 w-10 rounded-xl ${sc.bg} border ${sc.border} flex items-center justify-center flex-shrink-0`}>
-                        <span className={sc.color}>{sc.icon}</span>
+                      <div className={`h-10 w-10 rounded-xl ${sc.bg} dark:bg-[#12352D] border ${sc.border} dark:border-[#2D3748] flex items-center justify-center flex-shrink-0`}>
+                        <span className={`${sc.color} dark:text-emerald-400`}>{sc.icon}</span>
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900 text-sm">#{order.orderNumber}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{format(new Date(order.createdAt), 'dd MMM yyyy, hh:mm a')}</p>
+                        <p className="font-bold text-gray-900 dark:text-[#F9FAFB] text-sm">#{order.orderNumber}</p>
+                        <p className="text-xs text-gray-400 dark:text-[#A7B3C5] mt-0.5">{format(new Date(order.createdAt), 'dd MMM yyyy, hh:mm a')}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${sc.color} ${sc.bg} ${sc.border}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${sc.color} ${sc.bg} ${sc.border} dark:bg-[#111827] dark:border-[#2D3748]`}>
                         {sc.icon} {sc.label}
                       </span>
-                      <span className="text-lg font-extrabold text-gray-900">₹{order.totalAmount.toFixed(0)}</span>
+                      <span className="text-lg font-extrabold text-gray-900 dark:text-[#F9FAFB]">₹{order.totalAmount.toFixed(0)}</span>
                     </div>
                   </div>
 
@@ -158,7 +158,7 @@ const Orders = () => {
                     <div className="flex flex-col md:flex-row gap-5">
                       {/* Items */}
                       <div className="flex-1">
-                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-[#A7B3C5] mb-3">
                           From {order.shopId?.shopName}
                         </p>
                         <ul className="space-y-2">
@@ -166,41 +166,41 @@ const Orders = () => {
                             <li key={i} className="flex items-center justify-between text-sm">
                               <div className="flex items-center gap-2">
                                 {item.imageUrl && (
-                                  <img src={item.imageUrl} alt={item.name} className="h-8 w-8 rounded-lg object-cover border border-gray-100" />
+                                  <img src={item.imageUrl} alt={item.name} className="h-8 w-8 rounded-lg object-cover border border-gray-100 dark:border-[#2D3748]" />
                                 )}
-                                <span className="font-medium text-gray-800">{item.name}</span>
-                                <span className="text-gray-400">× {item.quantity}</span>
+                                <span className="font-medium text-gray-800 dark:text-[#F9FAFB]">{item.name}</span>
+                                <span className="text-gray-400 dark:text-[#A7B3C5]">× {item.quantity}</span>
                               </div>
-                              <span className="font-bold text-gray-700">₹{(item.price * item.quantity).toFixed(0)}</span>
+                              <span className="font-bold text-gray-700 dark:text-[#F9FAFB]">₹{(item.price * item.quantity).toFixed(0)}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
 
                       {/* Details */}
-                      <div className="md:w-52 bg-gray-50 rounded-xl p-4 text-xs text-gray-600 space-y-2 flex-shrink-0">
-                        <p className="font-bold text-gray-700 text-sm mb-3">Order Details</p>
+                      <div className="md:w-52 bg-gray-50 dark:bg-[#111827] border border-transparent dark:border-[#2D3748] rounded-xl p-4 text-xs text-gray-600 dark:text-[#A7B3C5] space-y-2 flex-shrink-0">
+                        <p className="font-bold text-gray-700 dark:text-[#F9FAFB] text-sm mb-3">Order Details</p>
                         <div className="flex justify-between">
                           <span>Delivery</span>
-                          <span className="font-semibold">{order.deliveryType === 'delivery' ? '🚚 Home' : '🛍 Pickup'}</span>
+                          <span className="font-semibold text-gray-800 dark:text-[#F9FAFB]">{order.deliveryType === 'delivery' ? '🚚 Home' : '🛍 Pickup'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Payment</span>
-                          <span className="font-semibold">💵 COD</span>
+                          <span className="font-semibold text-gray-800 dark:text-[#F9FAFB]">💵 COD</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Delivery Fee</span>
-                          <span className="font-semibold">₹{order.deliveryFee}</span>
+                          <span className="font-semibold text-gray-800 dark:text-[#F9FAFB]">₹{order.deliveryFee}</span>
                         </div>
-                        <div className="flex justify-between border-t border-gray-200 pt-2 mt-1">
-                          <span className="font-bold text-gray-700">Total</span>
-                          <span className="font-bold text-gray-900">₹{order.totalAmount}</span>
+                        <div className="flex justify-between border-t border-gray-200 dark:border-[#2D3748] pt-2 mt-1">
+                          <span className="font-bold text-gray-700 dark:text-[#A7B3C5]">Total</span>
+                          <span className="font-bold text-gray-900 dark:text-[#F9FAFB]">₹{order.totalAmount}</span>
                         </div>
 
                         {order.deliveryLocation?.address && (
-                          <div className="pt-2 border-t border-gray-200 text-[11px]">
-                            <span className="text-gray-400 block mb-0.5">Delivery Pin:</span>
-                            <p className="text-gray-700 font-medium line-clamp-2" title={order.deliveryLocation.address}>
+                          <div className="pt-2 border-t border-gray-200 dark:border-[#2D3748] text-[11px]">
+                            <span className="text-gray-400 dark:text-slate-500 block mb-0.5">Delivery Pin:</span>
+                            <p className="text-gray-700 dark:text-[#F9FAFB] font-medium line-clamp-2" title={order.deliveryLocation.address}>
                               {order.deliveryLocation.address}
                             </p>
                             {order.deliveryLocation.latitude && (
@@ -208,7 +208,7 @@ const Orders = () => {
                                 href={`https://www.openstreetmap.org/?mlat=${order.deliveryLocation.latitude}&mlon=${order.deliveryLocation.longitude}#map=16/${order.deliveryLocation.latitude}/${order.deliveryLocation.longitude}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sky-600 hover:text-sky-700 font-bold block mt-1"
+                                className="text-sky-600 dark:text-emerald-400 hover:underline font-bold block mt-1"
                               >
                                 🗺️ View on Map
                               </a>
@@ -219,7 +219,7 @@ const Orders = () => {
                         {order.orderStatus === 'placed' && (
                           <button
                             onClick={() => handleCancel(order._id)}
-                            className="w-full mt-3 py-2 text-xs font-bold text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-all"
+                            className="w-full mt-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/60 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/40 transition-all cursor-pointer"
                           >
                             Cancel Order
                           </button>

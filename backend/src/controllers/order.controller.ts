@@ -99,21 +99,32 @@ export const orderController = {
             return;
           }
           deliveryAddress = {
-            fullName: addr.fullName,
-            phone: addr.phone,
-            addressLine1: addr.addressLine1,
-            addressLine2: addr.addressLine2,
-            city: addr.city,
-            state: addr.state,
-            postalCode: addr.postalCode,
+            fullName: (addr.fullName && addr.fullName.trim()) || user.name || 'Customer',
+            phone: (addr.phone && addr.phone.trim()) || (user.phone && user.phone.trim()) || 'N/A',
+            label: addr.label || 'Home',
+            houseStreet: addr.houseStreet || addr.addressLine1,
+            areaCity: addr.areaCity || addr.city,
+            pinCode: addr.pinCode || addr.postalCode,
+            landmark: addr.landmark || '',
+            addressLine1: addr.houseStreet || addr.addressLine1,
+            addressLine2: addr.addressLine2 || '',
+            city: addr.areaCity || addr.city,
+            state: addr.state || 'Tamil Nadu',
+            postalCode: addr.pinCode || addr.postalCode,
             latitude: addr.latitude,
             longitude: addr.longitude,
           };
           if (addr.latitude && addr.longitude) {
             deliveryLocationData = {
-              address: `${addr.addressLine1}, ${addr.city}, ${addr.postalCode}`,
+              address: `${addr.houseStreet || addr.addressLine1}, ${addr.areaCity || addr.city}, ${addr.pinCode || addr.postalCode}`,
               latitude: addr.latitude,
               longitude: addr.longitude,
+            };
+          } else {
+            deliveryLocationData = {
+              address: `${addr.houseStreet || addr.addressLine1}, ${addr.areaCity || addr.city} - ${addr.pinCode || addr.postalCode}${addr.landmark ? ` (Near ${addr.landmark})` : ''}`,
+              latitude: 0,
+              longitude: 0,
             };
           }
         } else {

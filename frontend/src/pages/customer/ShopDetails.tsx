@@ -7,47 +7,62 @@ import { Shop, Product, Category } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
 
+const PRODUCT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=80';
+
 const ProductCard = ({
   product, onAdd, cartQty,
 }: { product: Product; onAdd: () => void; cartQty: number }) => {
   const outOfStock = product.stock <= 0 || !product.isAvailable;
   return (
-    <div className={`card flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${outOfStock ? 'opacity-60' : ''}`}>
-      <div className="relative h-36 bg-gradient-to-br from-slate-50 to-gray-100 rounded-t-2xl overflow-hidden">
-        {product.imageUrl ? (
-          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain p-2 mix-blend-multiply" loading="lazy" />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <Package size={32} className="text-gray-300" />
-          </div>
-        )}
-        {product.stock <= 5 && product.stock > 0 && (
-          <div className="absolute top-2 left-2 badge-red text-[10px] px-1.5 py-0.5">
-            Only {product.stock} left!
-          </div>
-        )}
-        {outOfStock && (
-          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Out of Stock</span>
-          </div>
-        )}
-      </div>
+    <div className={`card flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] ${outOfStock ? 'opacity-60' : ''}`}>
+      <Link to={`/products/${product._id}`} className="group block">
+        <div className="relative h-36 bg-slate-50 dark:bg-[#111827] rounded-t-2xl overflow-hidden">
+          {product.imageUrl ? (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="w-full h-full object-contain p-2 mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = PRODUCT_FALLBACK_IMAGE;
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <Package size={32} className="text-gray-300 dark:text-slate-600" />
+            </div>
+          )}
+          {product.stock <= 5 && product.stock > 0 && (
+            <div className="absolute top-2 left-2 badge-red text-[10px] px-1.5 py-0.5">
+              Only {product.stock} left!
+            </div>
+          )}
+          {outOfStock && (
+            <div className="absolute inset-0 bg-white/80 dark:bg-[#111827]/85 flex items-center justify-center">
+              <span className="text-xs font-bold text-gray-400 dark:text-[#A7B3C5] uppercase tracking-wider">Out of Stock</span>
+            </div>
+          )}
+        </div>
 
-      <div className="p-3 flex flex-col flex-grow">
-        <h4 className="text-sm font-bold text-gray-900 line-clamp-2 leading-tight">{product.name}</h4>
-        <p className="text-xs text-gray-400 mt-0.5">{product.unit}</p>
+        <div className="p-3 pb-0">
+          <h4 className="text-sm font-bold text-gray-900 dark:text-[#F9FAFB] group-hover:text-primary-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2 leading-tight">{product.name}</h4>
+          <p className="text-xs text-gray-400 dark:text-[#A7B3C5] mt-0.5">{product.unit}</p>
+        </div>
+      </Link>
 
-        <div className="mt-auto pt-3 flex items-center justify-between">
-          <span className="text-base font-extrabold text-gray-900">₹{product.price}</span>
+      <div className="p-3 pt-2 flex flex-col flex-grow justify-end">
+        <div className="mt-auto pt-2 flex items-center justify-between">
+          <span className="text-base font-extrabold text-gray-900 dark:text-[#F9FAFB]">₹{product.price}</span>
           {!outOfStock && (
             cartQty > 0 ? (
-              <span className="flex items-center gap-1 bg-primary-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl">
+              <span className="flex items-center gap-1 bg-primary-600 dark:bg-emerald-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl">
                 ✓ {cartQty} in cart
               </span>
             ) : (
               <button
                 onClick={onAdd}
-                className="flex items-center gap-1 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
+                className="flex items-center gap-1 bg-primary-600 hover:bg-primary-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95 cursor-pointer"
               >
                 <Plus size={13} /> Add
               </button>
@@ -78,7 +93,7 @@ const ShopDetails = () => {
         const [shopRes, catRes, prodRes] = await Promise.all([
           api.get(`/shops/${shopId}`),
           api.get('/categories'),
-          api.get('/products', { params: { shopId, limit: 100 } }),
+          api.get('/products', { params: { shopId, limit: 250 } }),
         ]);
         if (shopRes.data.success) setShop(shopRes.data.data);
         if (catRes.data.success) setCategories(catRes.data.data);
@@ -187,12 +202,12 @@ const ShopDetails = () => {
       <div className="page-container py-8 flex flex-col lg:flex-row gap-6">
         {/* Sidebar Categories */}
         <aside className="w-full lg:w-52 flex-shrink-0">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 px-2">Categories</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-[#A7B3C5] mb-3 px-2">Categories</h3>
           <nav className="space-y-0.5">
             <button
               onClick={() => setActiveCategory('')}
-              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                activeCategory === '' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'
+              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                activeCategory === '' ? 'bg-primary-600 dark:bg-emerald-600 text-white shadow-sm' : 'text-gray-600 dark:text-[#A7B3C5] hover:bg-gray-100 dark:hover:bg-[#172033]'
               }`}
             >
               All Products ({products.length})
@@ -206,12 +221,12 @@ const ShopDetails = () => {
                 <button
                   key={cat._id}
                   onClick={() => setActiveCategory(cat._id)}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-between ${
-                    activeCategory === cat._id ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-between cursor-pointer ${
+                    activeCategory === cat._id ? 'bg-primary-600 dark:bg-emerald-600 text-white shadow-sm' : 'text-gray-600 dark:text-[#A7B3C5] hover:bg-gray-100 dark:hover:bg-[#172033]'
                   }`}
                 >
                   <span>{cat.name}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeCategory === cat._id ? 'bg-white/20' : 'bg-gray-200 text-gray-500'}`}>{count}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeCategory === cat._id ? 'bg-white/20' : 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-[#F9FAFB]'}`}>{count}</span>
                 </button>
               );
             })}
@@ -222,7 +237,7 @@ const ShopDetails = () => {
         <div className="flex-1">
           {/* Search */}
           <div className="relative mb-6">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-[#A7B3C5]" />
             <input
               type="text"
               className="input-field pl-10"
@@ -233,14 +248,14 @@ const ShopDetails = () => {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="card p-12 text-center animate-scale-in">
-              <Package size={40} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-gray-500 font-medium">No products found</p>
-              <p className="text-xs text-gray-400 mt-1">Try a different search term or category</p>
+            <div className="card p-12 text-center animate-scale-in border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033]">
+              <Package size={40} className="mx-auto text-gray-300 dark:text-slate-600 mb-3" />
+              <p className="text-gray-500 dark:text-[#A7B3C5] font-medium">No products found</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Try a different search term or category</p>
             </div>
           ) : (
             <>
-              <p className="text-xs text-gray-400 mb-4">{filtered.length} products found</p>
+              <p className="text-xs text-gray-400 dark:text-[#A7B3C5] mb-4">{filtered.length} products found</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
                 {filtered.map((p, i) => (
                   <div key={p._id} className="animate-fade-in-up" style={{ animationDelay: `${i * 40}ms` }}>

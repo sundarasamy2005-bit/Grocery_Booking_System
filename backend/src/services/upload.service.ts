@@ -112,12 +112,21 @@ const uploadWithFallback = async (
 };
 
 export const uploadService = {
+  uploadWithFallback,
+
   async uploadProductImage(
     buffer: Buffer,
     mimetype?: string,
     existingPublicId?: string
   ): Promise<CloudinaryUploadResult> {
     return uploadWithFallback(buffer, 'grocery/products', mimetype || 'image/jpeg', existingPublicId);
+  },
+
+  async uploadReviewPhoto(
+    buffer: Buffer,
+    mimetype?: string
+  ): Promise<CloudinaryUploadResult> {
+    return uploadWithFallback(buffer, 'grocery/reviews', mimetype || 'image/jpeg');
   },
 
   async uploadShopImage(

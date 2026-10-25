@@ -26,4 +26,15 @@ export const uploadMiddleware = multer({
   },
 });
 
+export const uploadMultiMiddleware = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB per file
+    files: 5,
+  },
+});
+
 export const uploadSingle = uploadMiddleware.single('image');
+export const uploadReviewPhotos = uploadMultiMiddleware.array('photos', 5);
+export const uploadProductImages = uploadMultiMiddleware.array('images', 5);

@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Sparkles
 } from 'lucide-react';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -118,20 +119,24 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-primary-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B1220] flex items-center justify-center p-4 relative transition-colors duration-200">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+        <ThemeToggle variant="icon" />
+      </div>
+
       <div className="w-full max-w-md animate-scale-in">
-        <div className="card p-8 shadow-xl border border-gray-100">
+        <div className="bg-white dark:bg-[#172033] rounded-3xl p-6 sm:p-8 shadow-xl border border-gray-100 dark:border-[#2D3748]">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl gradient-primary shadow-lg mb-4 animate-float">
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-600/30 mb-4 animate-float">
               <ShoppingBag size={28} className="text-white" />
             </div>
-            <h2 className="text-2xl font-extrabold text-gray-900">Create your account</h2>
-            <p className="text-gray-500 text-sm mt-1">Join LocalGrocery for free today</p>
+            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-[#F9FAFB]">Create your account</h2>
+            <p className="text-gray-500 dark:text-[#A7B3C5] text-sm mt-1">Join LocalGrocery for free today</p>
           </div>
 
           {error && (
-            <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 animate-scale-in flex items-start gap-2">
+            <div className="mb-5 p-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 rounded-xl text-sm text-red-700 dark:text-red-300 animate-scale-in flex items-start gap-2">
               <span className="shrink-0 text-red-500 font-bold">⚠️</span>
               <span>{error}</span>
             </div>
@@ -140,18 +145,18 @@ const Register = () => {
           <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
             {/* Role Selection */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">I want to...</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-[#F9FAFB] mb-2">I want to...</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setValue('role', 'customer')}
                   className={`flex flex-col items-center gap-2 p-3.5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 cursor-pointer ${
                     selectedRole === 'customer'
-                      ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-2xs font-bold'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-[#12352D] text-emerald-700 dark:text-emerald-300 shadow-2xs font-bold'
+                      : 'border-gray-200 dark:border-[#2D3748] text-gray-600 dark:text-[#A7B3C5] hover:border-gray-300 dark:hover:border-slate-600 hover:bg-gray-50 dark:hover:bg-[#111827]'
                   }`}
                 >
-                  <ShoppingCart size={22} className={selectedRole === 'customer' ? 'text-primary-600' : 'text-gray-400'} />
+                  <ShoppingCart size={22} className={selectedRole === 'customer' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-slate-500'} />
                   <span>Shop as Customer</span>
                 </button>
                 <button
@@ -159,18 +164,18 @@ const Register = () => {
                   onClick={() => setValue('role', 'shopOwner')}
                   className={`flex flex-col items-center gap-2 p-3.5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 cursor-pointer ${
                     selectedRole === 'shopOwner'
-                      ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-2xs font-bold'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-[#12352D] text-emerald-700 dark:text-emerald-300 shadow-2xs font-bold'
+                      : 'border-gray-200 dark:border-[#2D3748] text-gray-600 dark:text-[#A7B3C5] hover:border-gray-300 dark:hover:border-slate-600 hover:bg-gray-50 dark:hover:bg-[#111827]'
                   }`}
                 >
-                  <Store size={22} className={selectedRole === 'shopOwner' ? 'text-primary-600' : 'text-gray-400'} />
+                  <Store size={22} className={selectedRole === 'shopOwner' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-slate-500'} />
                   <span>Register My Shop</span>
                 </button>
               </div>
 
               {/* Informative helper text for the selected role */}
-              <div className="mt-2.5 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-600 flex items-center gap-2">
-                <Sparkles size={14} className="text-primary-600 shrink-0" />
+              <div className="mt-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#111827] border border-slate-100 dark:border-[#2D3748] text-[11px] text-slate-600 dark:text-[#A7B3C5] flex items-center gap-2">
+                <Sparkles size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>
                   {selectedRole === 'shopOwner'
                     ? 'Includes merchant dashboard, order management, AI demand forecasts & stock alerts.'
@@ -181,60 +186,60 @@ const Register = () => {
 
             {/* Full Name */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-[#F9FAFB] mb-1.5">Full Name</label>
               <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#A7B3C5]" size={18} />
                 <input
                   {...register('name')}
                   type="text"
                   placeholder="e.g. Gokul"
-                  className="input-field pl-10"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
-              {errors.name && <p className="mt-1.5 text-xs text-red-600">⚠ {errors.name.message}</p>}
+              {errors.name && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">⚠ {errors.name.message}</p>}
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-[#F9FAFB] mb-1.5">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#A7B3C5]" size={18} />
                 <input
                   {...register('email')}
                   type="email"
                   placeholder="you@example.com"
-                  className="input-field pl-10"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
-              {errors.email && <p className="mt-1.5 text-xs text-red-600">⚠ {errors.email.message}</p>}
+              {errors.email && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">⚠ {errors.email.message}</p>}
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-[#F9FAFB] mb-1.5">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#A7B3C5]" size={18} />
                 <input
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Min. 6 characters"
-                  className="input-field pl-10 pr-10"
+                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#A7B3C5] hover:text-gray-600 dark:hover:text-gray-200"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {errors.password && <p className="mt-1.5 text-xs text-red-600">⚠ {errors.password.message}</p>}
+              {errors.password && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">⚠ {errors.password.message}</p>}
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary py-3.5 rounded-xl text-base font-bold disabled:opacity-60 mt-2"
+              className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold transition-all shadow-md shadow-emerald-600/20 disabled:opacity-60 cursor-pointer mt-2"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -249,15 +254,15 @@ const Register = () => {
           </form>
 
           <div className="my-5 flex items-center gap-4">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400 font-medium">OR</span>
-            <div className="flex-1 h-px bg-gray-200" />
+            <div className="flex-1 h-px bg-gray-200 dark:bg-[#2D3748]" />
+            <span className="text-xs text-gray-400 dark:text-[#A7B3C5] font-medium">OR</span>
+            <div className="flex-1 h-px bg-gray-200 dark:bg-[#2D3748]" />
           </div>
 
           <button
             onClick={handleGoogleRegister}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 cursor-pointer"
+            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 border-2 border-gray-200 dark:border-[#2D3748] rounded-xl text-sm font-bold text-gray-700 dark:text-[#F9FAFB] hover:bg-gray-50 dark:hover:bg-[#111827] hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-200 cursor-pointer"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -268,9 +273,9 @@ const Register = () => {
             Sign up with Google
           </button>
 
-          <p className="mt-5 text-center text-sm text-gray-600">
+          <p className="mt-5 text-center text-sm text-gray-600 dark:text-[#A7B3C5]">
             Already have an account?{' '}
-            <Link to="/login" className="font-bold text-primary-600 hover:text-primary-700 hover:underline">
+            <Link to="/login" className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
               Sign in
             </Link>
           </p>

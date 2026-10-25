@@ -123,11 +123,22 @@ export const shopController = {
         const userLat = parseFloat(lat);
         const userLng = parseFloat(lng);
         const shopsWithDist = shops
-          .map((shop) => ({
-            ...shop,
-            distance: haversineDistance(userLat, userLng, shop.latitude, shop.longitude),
-          }))
-          .sort((a, b) => a.distance - b.distance);
+          .map((shop) => {
+            const hasCoords =
+              typeof shop.latitude === 'number' &&
+              typeof shop.longitude === 'number' &&
+              !isNaN(shop.latitude) &&
+              !isNaN(shop.longitude);
+            return {
+              ...shop,
+              distance: hasCoords ? haversineDistance(userLat, userLng, shop.latitude, shop.longitude) : undefined,
+            };
+          })
+          .sort((a, b) => {
+            const distA = typeof a.distance === 'number' ? a.distance : 99999;
+            const distB = typeof b.distance === 'number' ? b.distance : 99999;
+            return distA - distB;
+          });
 
         res.json({
           success: true,

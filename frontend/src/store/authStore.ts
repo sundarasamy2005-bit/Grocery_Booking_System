@@ -15,6 +15,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   syncUser: (extraData?: { name?: string; role?: string }) => Promise<User | null>;
+  updateUser: (partial: Partial<User>) => void;
   logout: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -28,6 +29,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
+
+  updateUser: (partial) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...partial } : null,
+    })),
 
   syncUser: async (extraData?: { name?: string; role?: string }): Promise<User | null> => {
     try {

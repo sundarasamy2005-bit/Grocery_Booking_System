@@ -117,7 +117,7 @@ export const ShopMapView = ({ shops, userLat, userLng, userLocationName = 'Your 
   }, [shops, userLat, userLng, userLocationName, navigate]);
 
   return (
-    <div className="w-full h-[450px] rounded-3xl overflow-hidden shadow-lg border border-slate-200 relative z-10">
+    <div className="w-full h-[450px] rounded-3xl overflow-hidden shadow-lg border border-slate-200 dark:border-[#2D3748] relative z-10">
       <div ref={mapContainerRef} className="w-full h-full" />
     </div>
   );

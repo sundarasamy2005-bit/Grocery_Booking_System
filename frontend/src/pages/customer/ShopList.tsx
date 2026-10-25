@@ -20,7 +20,8 @@ import MainLayout from '../../components/layout/MainLayout';
 import { api } from '../../services/api';
 import { Shop, Category } from '../../types';
 import { useLocationStore } from '../../store/locationStore';
-import { useToastStore } from '../../store/toastStore';
+import { useAddressStore } from '../../store/addressStore';
+import { toast } from '../../store/toastStore';
 import { ShopMapView } from '../../components/common/ShopMapView';
 
 export const ShopList = () => {
@@ -29,7 +30,7 @@ export const ShopList = () => {
   const initialCategory = searchParams.get('categoryId') || '';
 
   const { city, locationName, lat, lng, openModal: openLocationModal, detectCurrentLocation, isDetecting } = useLocationStore();
-  const toast = useToastStore();
+  const { activeAddress, openModal: openAddressModal } = useAddressStore();
 
   const [shops, setShops] = useState<Shop[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -40,6 +41,7 @@ export const ShopList = () => {
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [filterDelivery, setFilterDelivery] = useState(false);
   const [filterPickup, setFilterPickup] = useState(false);
+  const [filterOpenNow, setFilterOpenNow] = useState(false);
 
   // Load Categories for filter bar
   useEffect(() => {
@@ -55,10 +57,13 @@ export const ShopList = () => {
   const fetchShops = useCallback(async (searchQuery?: string) => {
     try {
       setLoading(true);
+      const query = searchQuery !== undefined ? searchQuery : initialSearch;
       const params: Record<string, any> = {
-        search: searchQuery !== undefined ? searchQuery : searchTerm,
         limit: 50,
       };
+      if (query && query.trim()) {
+        params.search = query.trim();
+      }
 
       if (lat && lng) {
         params.lat = lat;
@@ -67,15 +72,15 @@ export const ShopList = () => {
 
       const res = await api.get('/shops', { params });
       if (res.data.success) {
-        setShops(res.data.data);
+        setShops(res.data.data || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch shops', error);
-      toast.error('Unable to load shops right now');
+      toast.error(error.response?.data?.message || 'Unable to load shops right now');
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, lat, lng, toast]);
+  }, [lat, lng, initialSearch]);
 
   useEffect(() => {
     fetchShops(initialSearch);
@@ -105,12 +110,13 @@ export const ShopList = () => {
     .filter((shop) => {
       if (filterDelivery && !shop.deliveryAvailable) return false;
       if (filterPickup && !shop.pickupAvailable) return false;
+      if (filterOpenNow && shop.isOpen === false) return false;
       return true;
     })
     .sort((a, b) => {
       if (sortBy === 'distance') {
-        const distA = a.distance ?? 9999;
-        const distB = b.distance ?? 9999;
+        const distA = typeof a.distance === 'number' ? a.distance : 9999;
+        const distB = typeof b.distance === 'number' ? b.distance : 9999;
         return distA - distB;
       }
       if (sortBy === 'minOrder') {
@@ -120,56 +126,63 @@ export const ShopList = () => {
     });
 
   const selectedCategoryObj = categories.find((c) => c._id === selectedCategory);
+  const deliveryAreaDisplay = activeAddress
+    ? `${activeAddress.areaCity || activeAddress.city} · ${activeAddress.pinCode || activeAddress.postalCode}`
+    : `${city || 'Pollachi'} · 642103`;
 
   return (
     <MainLayout>
-      {/* Top Banner */}
-      <div className="bg-gradient-to-br from-sky-900 via-sky-800 to-sky-700 text-white py-10 shadow-sm">
+      {/* Top Banner - Compact & Clean */}
+      <div className="bg-white dark:bg-[#111827] border-b border-slate-100 dark:border-[#2D3748] py-6 sm:py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-yellow-300">
-                LOCAL DIRECTORY
-              </span>
-              <h1 className="text-2xl sm:text-4xl font-black mt-1">
-                Grocery Stores near {city}
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-sky-600 dark:text-emerald-400 bg-sky-50 dark:bg-[#12352D] px-2.5 py-0.5 rounded-full">
+                  Local Directory
+                </span>
+                <span className="text-xs text-slate-400 dark:text-slate-600">•</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-[#A7B3C5]">{processedShops.length} stores nearby</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight mt-1">
+                Grocery Stores near {city || 'Pollachi'}
               </h1>
-              <p className="text-xs sm:text-sm text-sky-100 mt-1 max-w-xl">
-                Browse independent local grocery merchants, compare minimum orders, and select pickup or delivery.
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-[#A7B3C5] mt-1 max-w-xl">
+                Browse independent neighborhood merchants, compare minimum orders, and select pickup or fast delivery.
               </p>
             </div>
 
-            {/* Location selector card */}
-            <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 flex items-center gap-3 w-full sm:w-auto">
-              <div className="h-10 w-10 rounded-xl bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0 shadow-sm font-bold">
-                <MapPin size={20} />
+            {/* Clear Delivery Area Pill */}
+            <div className="flex items-center gap-3 p-2.5 px-3.5 bg-slate-50 dark:bg-[#172033] border border-slate-200/80 dark:border-[#2D3748] rounded-2xl w-full sm:w-auto shadow-2xs">
+              <div className="h-9 w-9 rounded-xl bg-sky-100 dark:bg-[#12352D] text-sky-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <MapPin size={18} />
               </div>
-              <div className="min-w-0 pr-2">
-                <p className="text-[10px] text-sky-200 font-bold uppercase">Current Area</p>
-                <p className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[180px]">
-                  {locationName}
+              <div className="min-w-0 pr-1">
+                <p className="text-[10px] text-slate-400 dark:text-[#A7B3C5] font-bold uppercase tracking-wider leading-none">Delivering to</p>
+                <p className="text-xs font-black text-slate-900 dark:text-[#F9FAFB] truncate mt-0.5">
+                  {deliveryAreaDisplay}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={openLocationModal}
-                className="px-3 py-1.5 bg-white text-slate-900 hover:bg-yellow-300 rounded-xl text-xs font-bold transition-all shrink-0"
+                onClick={() => openAddressModal()}
+                className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all shrink-0 cursor-pointer"
               >
                 Change
               </button>
             </div>
           </div>
 
-          {/* Search Form */}
-          <form onSubmit={handleSearchSubmit} className="mt-6 flex flex-col sm:flex-row gap-2 max-w-3xl">
+          {/* Compact Search Form */}
+          <form onSubmit={handleSearchSubmit} className="mt-5 flex flex-col sm:flex-row gap-2 max-w-3xl">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#A7B3C5]" size={17} />
               <input
                 type="text"
-                placeholder="Search shop by name or locality..."
+                placeholder="Search shops by name, street, or locality..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-9 py-3 bg-white text-slate-900 text-xs sm:text-sm rounded-2xl font-medium focus:outline-none focus:ring-4 focus:ring-sky-400/40 shadow-sm"
+                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-[#172033] border border-slate-200/80 dark:border-[#2D3748] text-slate-900 dark:text-[#F9FAFB] placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs sm:text-sm rounded-xl font-medium focus:bg-white dark:focus:bg-[#111827] focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-emerald-400 transition-all"
               />
               {searchTerm && (
                 <button
@@ -178,7 +191,7 @@ export const ShopList = () => {
                     setSearchTerm('');
                     fetchShops('');
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-[#F9FAFB] cursor-pointer"
                 >
                   <X size={15} />
                 </button>
@@ -190,15 +203,15 @@ export const ShopList = () => {
                 type="button"
                 onClick={handleGPSDetect}
                 disabled={isDetecting}
-                className="px-4 py-3 bg-white/15 hover:bg-white/25 text-white font-bold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-1.5 backdrop-blur-md border border-white/20 transition-all shrink-0"
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-[#172033] dark:hover:bg-[#111827] text-slate-700 dark:text-[#F9FAFB] border border-transparent dark:border-[#2D3748] font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer"
               >
-                <Navigation size={15} className={isDetecting ? 'animate-spin' : ''} />
+                <Navigation size={14} className={isDetecting ? 'animate-spin' : ''} />
                 <span>{isDetecting ? 'Detecting...' : 'Near Me'}</span>
               </button>
 
               <button
                 type="submit"
-                className="px-6 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold rounded-2xl text-xs sm:text-sm shadow-md transition-all shrink-0"
+                className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md shadow-sky-600/20 dark:shadow-emerald-950/40 transition-all shrink-0 cursor-pointer"
               >
                 Search
               </button>
@@ -208,19 +221,19 @@ export const ShopList = () => {
       </div>
 
       {/* Filter & Controls Bar */}
-      <div className="bg-white border-b border-slate-100 py-3.5 sticky top-16 sm:top-18 z-30 shadow-2xs">
+      <div className="bg-white dark:bg-[#172033] border-b border-slate-100 dark:border-[#2D3748] py-3.5 sticky top-16 sm:top-18 z-30 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Left: View Mode Toggle & Active Results Count */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center p-1 bg-slate-100 rounded-xl">
+              <div className="flex items-center p-1 bg-slate-100 dark:bg-[#111827] rounded-xl border border-transparent dark:border-[#2D3748]">
                 <button
                   type="button"
                   onClick={() => setViewMode('list')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     viewMode === 'list'
-                      ? 'bg-white text-slate-900 shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-900'
+                      ? 'bg-white dark:bg-[#172033] text-slate-900 dark:text-[#F9FAFB] shadow-2xs'
+                      : 'text-slate-500 dark:text-[#A7B3C5] hover:text-slate-900 dark:hover:text-[#F9FAFB]'
                   }`}
                 >
                   <List size={14} /> List View
@@ -228,18 +241,18 @@ export const ShopList = () => {
                 <button
                   type="button"
                   onClick={() => setViewMode('map')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     viewMode === 'map'
-                      ? 'bg-sky-600 text-white shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-900'
+                      ? 'bg-sky-600 dark:bg-emerald-600 text-white shadow-2xs'
+                      : 'text-slate-500 dark:text-[#A7B3C5] hover:text-slate-900 dark:hover:text-[#F9FAFB]'
                   }`}
                 >
                   <MapIcon size={14} /> OpenStreetMap
                 </button>
               </div>
 
-              <span className="text-xs font-bold text-slate-500">
-                <strong className="text-slate-900">{processedShops.length}</strong> stores found
+              <span className="text-xs font-bold text-slate-500 dark:text-[#A7B3C5]">
+                <strong className="text-slate-900 dark:text-[#F9FAFB]">{processedShops.length}</strong> stores found
               </span>
             </div>
 
@@ -249,10 +262,10 @@ export const ShopList = () => {
               <button
                 type="button"
                 onClick={() => setFilterDelivery(!filterDelivery)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
                   filterDelivery
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-emerald-50 dark:bg-[#12352D] border-emerald-300 dark:border-emerald-500 text-emerald-800 dark:text-emerald-300'
+                    : 'bg-white dark:bg-[#111827] border-slate-200 dark:border-[#2D3748] text-slate-600 dark:text-[#A7B3C5] hover:bg-slate-50 dark:hover:bg-[#172033]'
                 }`}
               >
                 <span>🚚 Delivery</span>
@@ -263,23 +276,37 @@ export const ShopList = () => {
               <button
                 type="button"
                 onClick={() => setFilterPickup(!filterPickup)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
                   filterPickup
-                    ? 'bg-sky-50 border-sky-300 text-sky-800'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-300 dark:border-sky-700 text-sky-800 dark:text-sky-300'
+                    : 'bg-white dark:bg-[#111827] border-slate-200 dark:border-[#2D3748] text-slate-600 dark:text-[#A7B3C5] hover:bg-slate-50 dark:hover:bg-[#172033]'
                 }`}
               >
                 <span>🛍 Pickup</span>
                 {filterPickup && <Check size={12} />}
               </button>
 
+              {/* Open Now Toggle */}
+              <button
+                type="button"
+                onClick={() => setFilterOpenNow(!filterOpenNow)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filterOpenNow
+                    ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300'
+                    : 'bg-white dark:bg-[#111827] border-slate-200 dark:border-[#2D3748] text-slate-600 dark:text-[#A7B3C5] hover:bg-slate-50 dark:hover:bg-[#172033]'
+                }`}
+              >
+                <span>⏰ Open Now</span>
+                {filterOpenNow && <Check size={12} />}
+              </button>
+
               {/* Sorter Dropdown */}
-              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
-                <span className="text-xs font-bold text-slate-400">Sort:</span>
+              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200 dark:border-[#2D3748]">
+                <span className="text-xs font-bold text-slate-400 dark:text-[#A7B3C5]">Sort:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="text-xs font-bold text-slate-800 dark:text-[#F9FAFB] bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-[#2D3748] rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-emerald-400 cursor-pointer"
                 >
                   <option value="distance">Nearest First</option>
                   <option value="minOrder">Min Order (Low to High)</option>
@@ -291,8 +318,8 @@ export const ShopList = () => {
 
           {/* Active Category Filter Tag if present */}
           {selectedCategoryObj && (
-            <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center gap-2">
-              <span className="text-xs text-slate-500 font-medium">Filtering by category:</span>
+            <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-[#2D3748] flex items-center gap-2">
+              <span className="text-xs text-slate-500 dark:text-[#A7B3C5] font-medium">Filtering by category:</span>
               <span className="badge-blue text-xs font-bold flex items-center gap-1">
                 <span>{selectedCategoryObj.name}</span>
                 <button
@@ -305,7 +332,7 @@ export const ShopList = () => {
                       return next;
                     });
                   }}
-                  className="hover:text-slate-900"
+                  className="hover:text-slate-900 cursor-pointer"
                 >
                   <X size={12} />
                 </button>
@@ -354,12 +381,12 @@ export const ShopList = () => {
             ))}
           </div>
         ) : processedShops.length === 0 ? (
-          <div className="card p-12 text-center max-w-md mx-auto border-dashed border-2 border-slate-200">
-            <div className="h-16 w-16 rounded-2xl bg-sky-50 text-sky-400 flex items-center justify-center mx-auto mb-4">
+          <div className="card p-12 text-center max-w-md mx-auto border-dashed border-2 border-slate-200 dark:border-[#2D3748] bg-white dark:bg-[#172033]">
+            <div className="h-16 w-16 rounded-2xl bg-sky-50 dark:bg-[#12352D] text-sky-400 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4">
               <Store size={32} />
             </div>
-            <h3 className="text-base font-extrabold text-slate-800">No shops match your criteria</h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <h3 className="text-base font-extrabold text-slate-800 dark:text-[#F9FAFB]">No shops match your criteria</h3>
+            <p className="text-xs text-slate-400 dark:text-[#A7B3C5] mt-1">
               Try adjusting your search keywords, clearing delivery/pickup filters, or changing your area location.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
@@ -390,11 +417,11 @@ export const ShopList = () => {
               <Link
                 key={shop._id}
                 to={`/shops/${shop._id}`}
-                className="card card-hover group block overflow-hidden border border-slate-100 hover:border-sky-300 shadow-sm hover:shadow-xl transition-all"
+                className="card card-hover group block overflow-hidden border border-slate-100 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-sky-300 dark:hover:border-emerald-500/50 shadow-sm hover:shadow-xl transition-all"
                 style={{ animationDelay: `${i * 40}ms` }}
               >
                 {/* Shop Banner Image */}
-                <div className="relative h-44 bg-slate-100 overflow-hidden">
+                <div className="relative h-44 bg-slate-100 dark:bg-[#111827] overflow-hidden">
                   {shop.shopImage ? (
                     <img
                       src={shop.shopImage}
@@ -403,27 +430,27 @@ export const ShopList = () => {
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 text-sky-700">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 dark:from-[#111827] dark:to-[#172033] text-sky-700 dark:text-emerald-400">
                       <Store size={36} />
                       <span className="text-xs font-bold mt-2">{shop.shopName}</span>
                     </div>
                   )}
 
-                  {/* Distance Badge */}
-                  {shop.distance !== undefined ? (
-                    <div className="absolute top-3 right-3 glass px-2.5 py-1 rounded-full text-xs font-extrabold text-sky-800 flex items-center gap-1 shadow-sm">
-                      <MapPin size={11} className="text-sky-600" />
+                  {/* Honest Distance / Locality Badge */}
+                  {typeof shop.distance === 'number' && !isNaN(shop.distance) ? (
+                    <div className="absolute top-3 right-3 bg-white/95 dark:bg-[#172033]/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-black text-sky-700 dark:text-emerald-400 flex items-center gap-1 shadow-xs border border-slate-100 dark:border-[#2D3748]">
+                      <MapPin size={11} className="text-sky-600 dark:text-emerald-400" />
                       {shop.distance.toFixed(1)} km
                     </div>
                   ) : (
-                    <div className="absolute top-3 right-3 glass px-2.5 py-1 rounded-full text-xs font-extrabold text-slate-700 flex items-center gap-1 shadow-sm">
-                      <Clock size={11} className="text-slate-500" />
-                      25-35 min
+                    <div className="absolute top-3 right-3 bg-white/95 dark:bg-[#172033]/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-700 dark:text-[#F9FAFB] flex items-center gap-1 shadow-xs border border-slate-100 dark:border-[#2D3748]">
+                      <MapPin size={11} className="text-slate-400 dark:text-[#A7B3C5]" />
+                      {shop.city || 'Pollachi'}
                     </div>
                   )}
 
                   {/* Rating */}
-                  <div className="absolute bottom-3 left-3 bg-white/95 px-2 py-0.5 rounded-lg text-xs font-black text-slate-900 flex items-center gap-1 shadow-xs">
+                  <div className="absolute bottom-3 left-3 bg-white/95 dark:bg-[#172033]/95 px-2 py-0.5 rounded-lg text-xs font-black text-slate-900 dark:text-[#F9FAFB] flex items-center gap-1 shadow-xs border border-transparent dark:border-[#2D3748]">
                     <Star size={12} className="text-amber-500 fill-amber-500" />
                     4.8
                   </div>
@@ -431,16 +458,16 @@ export const ShopList = () => {
 
                 {/* Details */}
                 <div className="p-4">
-                  <h3 className="font-extrabold text-slate-900 text-base group-hover:text-sky-600 transition-colors truncate">
+                  <h3 className="font-extrabold text-slate-900 dark:text-[#F9FAFB] text-base group-hover:text-sky-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                     {shop.shopName}
                   </h3>
 
-                  <p className="text-xs text-slate-500 mt-1 flex items-center gap-1 truncate">
-                    <MapPin size={12} className="text-slate-400 shrink-0" />
+                  <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-1 flex items-center gap-1 truncate">
+                    <MapPin size={12} className="text-slate-400 dark:text-[#A7B3C5] shrink-0" />
                     {shop.address}, {shop.city}
                   </p>
 
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-[#2D3748] flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       {shop.deliveryAvailable && (
                         <span className="badge-green text-[10px] py-0.5">🚚 Delivery</span>
@@ -449,7 +476,7 @@ export const ShopList = () => {
                         <span className="badge-blue text-[10px] py-0.5">🛍 Pickup</span>
                       )}
                     </div>
-                    <span className="font-bold text-slate-700">
+                    <span className="font-bold text-slate-700 dark:text-[#A7B3C5]">
                       Min. ₹{shop.minimumOrderAmount}
                     </span>
                   </div>

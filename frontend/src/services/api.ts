@@ -2,6 +2,7 @@ import axios from 'axios';
 import { auth } from '../config/firebase';
 import { onIdTokenChanged } from 'firebase/auth';
 import { env } from '../config/env';
+import { ProductReviewsResponse, Review, Address, AddressFormData, User, Product } from '../types';
 
 export const api = axios.create({
   baseURL: env.apiUrl,
@@ -101,3 +102,132 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const reviewApi = {
+  getReviews: async (
+    productId: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      sort?: string;
+      rating?: number;
+      withPhotos?: boolean;
+    }
+  ): Promise<ProductReviewsResponse> => {
+    const res = await api.get<ProductReviewsResponse>(`/reviews/product/${productId}`, { params });
+    return res.data;
+  },
+
+  submitReview: async (
+    productId: string,
+    formData: FormData
+  ): Promise<{ success: boolean; message: string; data: Review }> => {
+    const res = await api.post<{ success: boolean; message: string; data: Review }>(
+      `/reviews/product/${productId}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return res.data;
+  },
+
+  voteHelpful: async (
+    reviewId: string
+  ): Promise<{ success: boolean; data: { helpfulVotes: number; voted: boolean } }> => {
+    const res = await api.post<{ success: boolean; data: { helpfulVotes: number; voted: boolean } }>(
+      `/reviews/${reviewId}/helpful`
+    );
+    return res.data;
+  },
+
+  deleteReview: async (
+    reviewId: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const res = await api.delete<{ success: boolean; message: string }>(`/reviews/${reviewId}`);
+    return res.data;
+  },
+};
+
+export const addressApi = {
+  getAddresses: async (): Promise<Address[]> => {
+    const res = await api.get<{ success: boolean; data: Address[] }>('/addresses');
+    return res.data.data || [];
+  },
+
+  createAddress: async (data: AddressFormData): Promise<Address> => {
+    const res = await api.post<{ success: boolean; data: Address; message: string }>('/addresses', data);
+    return res.data.data;
+  },
+
+  updateAddress: async (id: string, data: Partial<AddressFormData>): Promise<Address> => {
+    const res = await api.put<{ success: boolean; data: Address; message: string }>(`/addresses/${id}`, data);
+    return res.data.data;
+  },
+
+  deleteAddress: async (id: string): Promise<void> => {
+    await api.delete(`/addresses/${id}`);
+  },
+
+  setDefault: async (id: string): Promise<Address> => {
+    const res = await api.patch<{ success: boolean; data: Address; message: string }>(`/addresses/${id}/default`);
+    return res.data.data;
+  },
+};
+
+export const favoriteApi = {
+  getFavorites: async (): Promise<Product[]> => {
+    const res = await api.get<{ success: boolean; data: Product[] }>('/users/favorites');
+    return res.data.data || [];
+  },
+
+  toggleFavorite: async (productId: string): Promise<{ isFavorite: boolean; favorites: string[] }> => {
+    const res = await api.post<{ success: boolean; data: { isFavorite: boolean; favorites: string[] }; message: string }>(
+      `/users/favorites/${productId}`
+    );
+    return res.data.data;
+  },
+
+  removeFavorite: async (productId: string): Promise<{ favorites: string[] }> => {
+    const res = await api.delete<{ success: boolean; data: { favorites: string[] }; message: string }>(
+      `/users/favorites/${productId}`
+    );
+    return res.data.data;
+  },
+};
+
+export const userApi = {
+  getProfile: async (): Promise<User> => {
+    const res = await api.get<{ success: boolean; data: User }>('/users/profile');
+    return res.data.data;
+  },
+
+  updateProfile: async (data: { name?: string; phone?: string }): Promise<User> => {
+    const res = await api.put<{ success: boolean; data: User; message: string }>('/users/profile', data);
+    return res.data.data;
+  },
+
+  uploadProfileImage: async (formData: FormData): Promise<User> => {
+    const res = await api.post<{ success: boolean; data: User; message: string }>('/users/profile/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data;
+  },
+
+  updateSettings: async (settings: { notificationsEnabled?: boolean }): Promise<{ notificationsEnabled?: boolean }> => {
+    const res = await api.put<{ success: boolean; data: { notificationsEnabled?: boolean }; message: string }>(
+      '/users/settings',
+      settings
+    );
+    return res.data.data;
+  },
+
+  deleteAccount: async (): Promise<{ message: string }> => {
+    const res = await api.delete<{ success: boolean; message: string }>('/users/account');
+    return res.data;
+  },
+};
+
+

@@ -1,5 +1,22 @@
 import { create } from 'zustand';
 
+export interface AddressDetails {
+  road?: string;
+  suburb?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  fullAddress?: string;
+}
+
+export interface DetectedLocationResult {
+  lat: number;
+  lng: number;
+  city: string;
+  locationName: string;
+  addressDetails?: AddressDetails;
+}
+
 export interface LocationState {
   locationName: string;
   city: string;
@@ -8,10 +25,15 @@ export interface LocationState {
   orderPreference: 'delivery' | 'pickup';
   isModalOpen: boolean;
   isDetecting: boolean;
-  
+
   openModal: () => void;
   closeModal: () => void;
-  setLocation: (loc: { locationName: string; city: string; lat: number | null; lng: number | null }) => void;
+  setLocation: (loc: {
+    locationName: string;
+    city: string;
+    lat: number | null;
+    lng: number | null;
+  }) => void;
   setOrderPreference: (pref: 'delivery' | 'pickup') => void;
   detectCurrentLocation: () => Promise<boolean>;
 }
@@ -42,6 +64,124 @@ const loadStoredPref = (): 'delivery' | 'pickup' => {
     console.error(e);
   }
   return 'delivery';
+};
+
+/**
+ * Resilient multi-tier geolocation detector:
+ * Tier 1: Browser Geolocation (low-accuracy standard query for laptops/phones)
+ * Tier 2: IP-based Geolocation fallback (works on PCs without GPS chips or when permission is restricted)
+ * Tier 3: OpenStreetMap Nominatim reverse geocoding to auto-fill street address, city, and postal code
+ */
+export const detectDeviceLocation = async (): Promise<DetectedLocationResult> => {
+  let lat: number | null = null;
+  let lng: number | null = null;
+  let detectedCity = 'Local Area';
+
+  // Tier 1: Try browser geolocation (4-second timeout, standard accuracy to avoid Windows GPS chip timeouts)
+  if (typeof navigator !== 'undefined' && navigator.geolocation) {
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false,
+          timeout: 4000,
+          maximumAge: 60000,
+        });
+      });
+      lat = position.coords.latitude;
+      lng = position.coords.longitude;
+    } catch (geoErr) {
+      console.warn('Browser geolocation timed out/denied, falling back to network IP geolocation:', geoErr);
+    }
+  }
+
+  // Tier 2: Network IP Geolocation Fallback (Fast, reliable, zero permission prompts required)
+  if (lat === null || lng === null) {
+    try {
+      const ipRes = await fetch('https://ipwho.is/');
+      if (ipRes.ok) {
+        const ipData = await ipRes.json();
+        if (ipData && ipData.success && typeof ipData.latitude === 'number') {
+          lat = ipData.latitude;
+          lng = ipData.longitude;
+          detectedCity = ipData.city || ipData.region || 'Local Area';
+        }
+      }
+    } catch (ipErr) {
+      console.warn('IP geolocation service unreachable, checking secondary source:', ipErr);
+      try {
+        const altRes = await fetch('https://ipapi.co/json/');
+        if (altRes.ok) {
+          const altData = await altRes.json();
+          if (typeof altData.latitude === 'number') {
+            lat = altData.latitude;
+            lng = altData.longitude;
+            detectedCity = altData.city || altData.region || 'Local Area';
+          }
+        }
+      } catch (altErr) {
+        console.warn('Secondary IP geolocation failed:', altErr);
+      }
+    }
+  }
+
+  // Absolute fallback default if offline or unreachable
+  if (lat === null || lng === null) {
+    lat = 10.6629;
+    lng = 77.0065;
+    detectedCity = 'Pollachi';
+  }
+
+  // Tier 3: Reverse Geocoding with OpenStreetMap Nominatim to auto-fill exact street address
+  let locationName = `${detectedCity}, Tamil Nadu, India`;
+  let finalCity = detectedCity;
+  let addressDetails: AddressDetails = {
+    city: finalCity,
+    fullAddress: locationName,
+  };
+
+  try {
+    const revRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      {
+        headers: { 'Accept-Language': 'en' },
+      }
+    );
+
+    if (revRes.ok) {
+      const data = await revRes.json();
+      if (data && data.display_name) {
+        locationName = data.display_name;
+        const addr = data.address || {};
+        finalCity =
+          addr.city ||
+          addr.town ||
+          addr.state_district ||
+          addr.county ||
+          addr.suburb ||
+          addr.village ||
+          detectedCity;
+
+        addressDetails = {
+          road: addr.road || '',
+          suburb: addr.suburb || '',
+          city: finalCity,
+          state: addr.state || 'Tamil Nadu',
+          postalCode: addr.postcode || '',
+          fullAddress: locationName,
+        };
+      }
+    }
+  } catch (revErr) {
+    console.warn('Reverse geocoding error:', revErr);
+  }
+
+  return {
+    lat,
+    lng,
+    city: finalCity,
+    locationName,
+    addressDetails,
+  };
 };
 
 const initialLoc = loadStoredLocation();
@@ -75,57 +215,32 @@ export const useLocationStore = create<LocationState>((set) => ({
   },
 
   detectCurrentLocation: async () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser');
-      return false;
-    }
-
     set({ isDetecting: true });
 
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          let locationName = `GPS: ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
-          let city = 'Current Location';
+    try {
+      const detected = await detectDeviceLocation();
+      const loc = {
+        locationName: detected.locationName,
+        city: detected.city,
+        lat: detected.lat,
+        lng: detected.lng,
+      };
 
-          try {
-            // Optional reverse geocoding via OpenStreetMap Nominatim
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
-              { headers: { 'Accept-Language': 'en' } }
-            );
-            if (res.ok) {
-              const data = await res.json();
-              city = data.address?.city || data.address?.town || data.address?.village || data.address?.suburb || 'My Area';
-              const state = data.address?.state || '';
-              locationName = `${city}${state ? ', ' + state : ''}`;
-            }
-          } catch (err) {
-            console.warn('Reverse geocoding failed, using coordinates', err);
-          }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(loc));
+      set({
+        locationName: loc.locationName,
+        city: loc.city,
+        lat: loc.lat,
+        lng: loc.lng,
+        isDetecting: false,
+        isModalOpen: false,
+      });
 
-          const loc = { locationName, city, lat, lng };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(loc));
-          set({
-            locationName,
-            city,
-            lat,
-            lng,
-            isDetecting: false,
-            isModalOpen: false,
-          });
-          resolve(true);
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-          set({ isDetecting: false });
-          alert('Unable to retrieve your location. Please select your city manually.');
-          resolve(false);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    });
+      return true;
+    } catch (err) {
+      console.error('Location detection failed:', err);
+      set({ isDetecting: false });
+      return false;
+    }
   },
 }));

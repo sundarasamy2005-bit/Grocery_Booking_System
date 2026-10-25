@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
-import { useLocationStore } from '../../store/locationStore';
-import { useToastStore } from '../../store/toastStore';
+import { useAddressStore } from '../../store/addressStore';
+import { toast } from '../../store/toastStore';
+import { useFavoriteStore } from '../../store/favoriteStore';
 import { api } from '../../services/api';
 import { Shop, Product, Category } from '../../types';
 import MainLayout from '../../components/layout/MainLayout';
+import { ProductCardSkeleton } from '../../components/common/ProductCardSkeleton';
+import { ShopCardSkeleton } from '../../components/common/ShopCardSkeleton';
 import {
   ShoppingBag,
   MapPin,
@@ -17,853 +20,1321 @@ import {
   ShieldCheck,
   Star,
   ChevronRight,
+  ChevronLeft,
   ArrowRight,
   Plus,
+  Minus,
   Check,
-  Tag,
   Sparkles,
   Percent,
   Copy,
   PackageCheck,
   CreditCard,
   CheckCircle2,
+  AlertCircle,
+  RotateCcw,
+  X,
+  Flame,
+  User,
+  Heart,
+  HelpCircle,
+  Settings,
+  ShoppingCart,
+  ExternalLink,
+  Leaf,
+  Package,
+  LayoutGrid,
+  SlidersHorizontal,
 } from 'lucide-react';
 
-const CATEGORY_EMOJIS: Record<string, string> = {
-  Vegetables: '🥦',
-  'Cooking Oil': '🌻',
-  'Pulses & Lentils': '🫘',
-  'Spices & Masala': '🌶️',
-  'Frozen Foods': '🧊',
-  'Cleaning Supplies': '🧹',
-  'Baby Products': '👶',
-  'Meat & Seafood': '🍗',
-  'Personal Hygiene': '🧼',
-  Eggs: '🥚',
-  Fruits: '🍎',
-  Dairy: '🥛',
-  'Rice & Grains': '🌾',
-  Snacks: '🍪',
-  Beverages: '🧃',
-  Bakery: '🍞',
-  'Personal Care': '🧴',
-  Household: '🏠',
-};
+const PRODUCT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=700&q=80';
 
-const OFFERS = [
+// 3 Dynamic Slides for Auto-Moving Hero Banner
+const HERO_SLIDES = [
   {
-    code: 'FIRST50',
-    title: 'Flat ₹50 OFF',
-    desc: 'On your first order above ₹299',
-    badge: 'NEW USER',
-    bg: 'from-amber-500 to-orange-500',
+    tag: 'Fresh & Healthy',
+    icon: Leaf,
+    tagClass: 'bg-emerald-100/90 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300',
+    iconClass: 'text-emerald-600 dark:text-emerald-400',
+    title: 'Fresh Groceries,',
+    titleHighlight: 'Right Around the Corner',
+    highlightClass: 'text-emerald-600 dark:text-emerald-400',
+    subtitle: 'Discover trusted local grocery shops and order everyday essentials with ease.',
+    note: 'Good Food, Better Life',
+    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=700&q=80',
+    bgGradient: 'from-emerald-50/90 via-teal-50/40 to-slate-50/30 dark:from-[#172033] dark:via-[#111827] dark:to-[#172033]',
   },
   {
-    code: 'FRESH20',
-    title: '20% OFF Veggies',
-    desc: 'Fresh farm vegetables & fruits',
-    badge: 'DAILY DEAL',
-    bg: 'from-emerald-600 to-teal-600',
+    tag: 'Farm Fresh Essentials',
+    icon: Sparkles,
+    tagClass: 'bg-emerald-100/90 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300',
+    iconClass: 'text-emerald-600 dark:text-emerald-400',
+    title: 'Pure Dairy & Eggs,',
+    titleHighlight: 'Crisp Seasonal Produce',
+    highlightClass: 'text-emerald-600 dark:text-emerald-400',
+    subtitle: 'Directly sourced farm-fresh milk, organic eggs, and orchard fruits packed with care every morning.',
+    note: '100% Farm Sourced',
+    image: 'https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=700&q=80',
+    bgGradient: 'from-emerald-50/80 via-green-50/40 to-slate-50/30 dark:from-[#172033] dark:via-[#111827] dark:to-[#172033]',
   },
   {
-    code: 'CODZERO',
-    title: 'Free Delivery',
-    desc: 'On orders from shops within 2km',
-    badge: 'LOCAL PERK',
-    bg: 'from-sky-600 to-blue-700',
+    tag: 'Weekly Mega Savings',
+    icon: Percent,
+    tagClass: 'bg-amber-100/90 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300',
+    iconClass: 'text-amber-600 dark:text-amber-400',
+    title: 'Wholesale Savings on',
+    titleHighlight: 'Rice, Dals & Staples',
+    highlightClass: 'text-emerald-600 dark:text-emerald-400',
+    subtitle: 'Best neighbourhood prices on rice, spices, lentils, and daily household needs from verified local shops.',
+    note: 'Best Price Guaranteed',
+    image: 'https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&w=700&q=80',
+    bgGradient: 'from-amber-50/80 via-emerald-50/30 to-slate-50/30 dark:from-[#172033] dark:via-[#111827] dark:to-[#172033]',
   },
 ];
 
-const STEPS = [
-  {
-    step: '1',
-    title: 'Choose Nearby Shop',
-    desc: 'Browse verified grocery stores in your neighborhood',
-    icon: <Store className="h-6 w-6 text-sky-600" />,
-  },
-  {
-    step: '2',
-    title: 'Select Fresh Items',
-    desc: 'Add milk, vegetables, rice, and daily necessities to your cart',
-    icon: <ShoppingBag className="h-6 w-6 text-emerald-600" />,
-  },
-  {
-    step: '3',
-    title: 'Delivery or Pickup',
-    desc: 'Choose doorstep delivery or self-pickup on your way home',
-    icon: <Truck className="h-6 w-6 text-amber-600" />,
-  },
-  {
-    step: '4',
-    title: 'Pay with Cash on Delivery',
-    desc: 'Zero online card hassle. Pay directly when receiving groceries',
-    icon: <CreditCard className="h-6 w-6 text-indigo-600" />,
-  },
-  {
-    step: '5',
-    title: 'Track Live Order',
-    desc: 'Watch the store accept, prepare, and deliver your order',
-    icon: <PackageCheck className="h-6 w-6 text-purple-600" />,
-  },
+// Illustrated Categories matching Screenshot & DB
+const POPULAR_CATEGORIES = [
+  { name: 'Vegetables', icon: '🥦', slug: 'vegetables' },
+  { name: 'Fruits', icon: '🍎', slug: 'fruits' },
+  { name: 'Dairy & Eggs', icon: '🥛', slug: 'dairy' },
+  { name: 'Bakery', icon: '🍞', slug: 'bakery' },
+  { name: 'Rice & Grains', icon: '🍚', slug: 'rice-grains' },
+  { name: 'Snacks', icon: '🍿', slug: 'snacks' },
+  { name: 'Beverages', icon: '🧃', slug: 'beverages' },
+  { name: 'Household', icon: '🧴', slug: 'household' },
+  { name: 'Personal Care', icon: '🧼', slug: 'personal-care' },
+  { name: 'Spices & Masala', icon: '🌶️', slug: 'spices-masala' },
+  { name: 'Pulses & Lentils', icon: '🫘', slug: 'pulses-lentils' },
+  { name: 'Cooking Oil', icon: '🫒', slug: 'cooking-oil' },
+  { name: 'Meat & Seafood', icon: '🥩', slug: 'meat-seafood' },
+  { name: 'Frozen Foods', icon: '🧊', slug: 'frozen-foods' },
+  { name: 'Baby Products', icon: '🍼', slug: 'baby-products' },
+  { name: 'Cleaning', icon: '🧹', slug: 'cleaning-supplies' },
 ];
 
 export const Home = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
-  const { addToCart } = useCartStore();
-  const { city, locationName, openModal: openLocationModal, orderPreference, setOrderPreference, lat, lng } = useLocationStore();
-  const toast = useToastStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const { cart, addToCart, updateQuantity, removeItem } = useCartStore();
+  const { activeAddress, openModal: openAddressModal, fetchAddresses } = useAddressStore();
+  const { isFavorite, toggleFavorite, fetchFavorites } = useFavoriteStore();
 
   const [shops, setShops] = useState<Shop[]>([]);
   const [popularProducts, setPopularProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
+
   const [loadingShops, setLoadingShops] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [heroSearch, setHeroSearch] = useState('');
-  const [addedItemIds, setAddedItemIds] = useState<Record<string, boolean>>({});
 
+  // Search state inside hero
+  const [heroSearchInput, setHeroSearchInput] = useState('');
+
+  // Hero carousel state & Auto-moving animation
+  const [heroSlide, setHeroSlide] = useState(0);
+  const [isHeroHovered, setIsHeroHovered] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // Slider Refs for right-to-left moving products and categories
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const productScrollRef = useRef<HTMLDivElement>(null);
+  const [productAnimKey, setProductAnimKey] = useState(0);
+  const [productViewMode, setProductViewMode] = useState<'grid' | 'carousel'>('grid');
+
+  // Auto-moving animation for Hero Banner: transitions automatically every 4.5 seconds
   useEffect(() => {
-    // 1. Fetch Categories
-    api
-      .get('/categories')
-      .then((res) => {
-        if (res.data.success) setCategories(res.data.data);
-      })
-      .catch((err) => console.error('Failed to load categories', err));
+    if (isHeroHovered || isSearchFocused) return;
+    const interval = setInterval(() => {
+      setHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 4500);
 
-    // 2. Fetch Nearby Shops (using coordinates if set)
-    const fetchShops = async () => {
+    return () => clearInterval(interval);
+  }, [isHeroHovered, isSearchFocused]);
+
+  // Load addresses & favorites on mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAddresses();
+      fetchFavorites();
+    }
+  }, [isAuthenticated, fetchAddresses, fetchFavorites]);
+
+  // Load shops, products & categories from database
+  useEffect(() => {
+    const fetchData = async () => {
       try {
         setLoadingShops(true);
-        const params: Record<string, any> = { limit: 6 };
-        if (lat && lng) {
-          params.lat = lat;
-          params.lng = lng;
+        setLoadingProducts(true);
+
+        const [shopRes, prodRes, catRes] = await Promise.all([
+          api.get('/shops', { params: { limit: 6 } }).catch(() => ({ data: { success: false, data: [] } })),
+          api.get('/products', { params: { limit: 250 } }).catch(() => ({ data: { success: false, data: [] } })),
+          api.get('/categories').catch(() => ({ data: { success: false, data: [] } })),
+        ]);
+
+        if (shopRes.data.success) {
+          setShops(shopRes.data.data || []);
         }
-        const res = await api.get('/shops', { params });
-        if (res.data.success) {
-          setShops(res.data.data);
+        if (prodRes.data.success) {
+          setPopularProducts(prodRes.data.data || []);
+        }
+        if (catRes.data.success) {
+          setCategories(catRes.data.data || []);
         }
       } catch (err) {
-        console.error('Failed to load shops', err);
+        console.error('Failed to load initial grocery data:', err);
       } finally {
         setLoadingShops(false);
-      }
-    };
-    fetchShops();
-
-    // 3. Fetch Popular Products
-    const fetchProducts = async () => {
-      try {
-        setLoadingProducts(true);
-        const res = await api.get('/products', { params: { limit: 8 } });
-        if (res.data.success) {
-          setPopularProducts(res.data.data);
-        }
-      } catch (err) {
-        console.error('Failed to load products', err);
-      } finally {
         setLoadingProducts(false);
       }
     };
-    fetchProducts();
-  }, [lat, lng]);
 
-  const handleHeroSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!heroSearch.trim()) return;
-    navigate(`/shops?search=${encodeURIComponent(heroSearch.trim())}`);
+    fetchData();
+  }, []);
+
+  // Filtered products based on selected category
+  const filteredProducts = useMemo(() => {
+    if (selectedCategorySlug === 'all') return popularProducts;
+    return popularProducts.filter((p) => {
+      const cat = typeof p.categoryId === 'object' ? p.categoryId : null;
+      if (!cat) return true;
+      const catSlug = (cat.slug || cat.name || '').toLowerCase();
+      const target = selectedCategorySlug.toLowerCase();
+      return (
+        catSlug.includes(target) ||
+        target.includes(catSlug) ||
+        (target === 'dairy' && (catSlug.includes('dairy') || catSlug.includes('milk') || catSlug.includes('egg'))) ||
+        (target === 'vegetables' && catSlug.includes('veg')) ||
+        (target === 'fruits' && catSlug.includes('fruit')) ||
+        (target === 'household' && (catSlug.includes('house') || catSlug.includes('clean')))
+      );
+    });
+  }, [popularProducts, selectedCategorySlug]);
+
+  // Scroll helpers to move categories and products smoothly right to left
+  const scrollCategory = (direction: 'left' | 'right') => {
+    if (categoryScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -280 : 280;
+      categoryScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollProducts = (direction: 'left' | 'right') => {
+    if (productScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -350 : 350;
+      productScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  // When user clicks "More" in the category row:
+  // 1. Moves the categories track right to left
+  // 2. Moves the products track right to left
+  // 3. Re-triggers right-to-left slide animation on product cards
+  const handleCategoryMoreClick = () => {
+    // 1. Scroll categories track
+    if (categoryScrollRef.current) {
+      const el = categoryScrollRef.current;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (el.scrollLeft >= maxScroll - 20) {
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        el.scrollBy({ left: 320, behavior: 'smooth' });
+      }
+    }
+
+    // 2. Scroll products track right to left
+    if (productScrollRef.current) {
+      const pEl = productScrollRef.current;
+      const pMax = pEl.scrollWidth - pEl.clientWidth;
+      if (pEl.scrollLeft >= pMax - 20) {
+        pEl.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        pEl.scrollBy({ left: 360, behavior: 'smooth' });
+      }
+    }
+
+    // 3. Trigger smooth right-to-left entrance animation
+    setProductAnimKey((k) => k + 1);
+    toast.info('Browsing more products & categories 👉');
+  };
+
+  // Category select handler with right-to-left product animation
+  const handleSelectCategory = (slug: string) => {
+    setSelectedCategorySlug(slug);
+    setProductAnimKey((k) => k + 1);
+    if (productScrollRef.current) {
+      productScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Cart item helper
+  const getCartQuantity = (productId: string) => {
+    if (!cart?.items) return 0;
+    const item = cart.items.find((i) => {
+      const pid = typeof i.productId === 'object' ? i.productId._id : i.productId;
+      return pid === productId;
+    });
+    return item ? item.quantity : 0;
   };
 
   const handleAddToCart = async (product: Product) => {
-    if (!isAuthenticated) {
-      toast.info('Please log in to add groceries to your cart');
-      navigate('/login');
+    if (product.stock <= 0 || !product.isAvailable) {
+      toast.error('Item is out of stock');
       return;
     }
-
-    const success = await addToCart(product, 1);
-    if (success) {
-      setAddedItemIds((prev) => ({ ...prev, [product._id]: true }));
+    const ok = await addToCart(product, 1);
+    if (ok) {
       toast.success(`Added ${product.name} to cart!`);
-      setTimeout(() => {
-        setAddedItemIds((prev) => ({ ...prev, [product._id]: false }));
-      }, 1500);
     }
   };
 
-  const copyCoupon = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast.success(`Coupon code ${code} copied!`);
+  const handleIncrement = async (productId: string, currentQty: number, maxStock = 99) => {
+    if (currentQty >= maxStock) {
+      toast.error(`Only ${maxStock} in stock!`);
+      return;
+    }
+    await updateQuantity(productId, currentQty + 1);
   };
+
+  const handleDecrement = async (productId: string, currentQty: number) => {
+    if (currentQty <= 1) {
+      await removeItem(productId);
+    } else {
+      await updateQuantity(productId, currentQty - 1);
+    }
+  };
+
+  const handleHeroSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!heroSearchInput.trim()) return;
+    navigate(`/shops?search=${encodeURIComponent(heroSearchInput.trim())}`);
+  };
+
+  // Formatted active address display
+  const addressString = activeAddress
+    ? `${activeAddress.houseStreet || activeAddress.addressLine1}, ${activeAddress.areaCity || activeAddress.city} - ${activeAddress.pinCode || activeAddress.postalCode}`
+    : 'No. 12, Anna Nagar, Pollachi, Coimbatore - 642001';
 
   return (
     <MainLayout>
-      {/* ──────────────────────────────────────────────────────────
-          1. HERO SECTION WITH LOCATION, LIVE SEARCH & QUICK ACTIONS
-         ────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden gradient-hero text-white py-12 md:py-20">
-        {/* Glow Effects */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-sky-400/20 rounded-full blur-3xl" />
-          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-amber-400/15 rounded-full blur-3xl" />
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Main 2-Column Responsive Desktop Layout matching Screenshot */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          {/* ======================================================== */}
+          {/* LEFT COLUMN: Main Grocery Content (~75% on Desktop)     */}
+          {/* ======================================================== */}
+          <div className="lg:col-span-8 xl:col-span-9 space-y-8">
+            {/* 1. HERO BANNER with Auto-Moving Animation & Dynamic Slides */}
+            {(() => {
+              const currentSlide = HERO_SLIDES[heroSlide];
+              const TagIcon = currentSlide.icon;
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            {/* Pill Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/25 rounded-full px-4 py-1.5 mb-5 shadow-sm animate-fade-in">
-              <Sparkles size={14} className="text-yellow-300" />
-              <span className="text-xs sm:text-sm font-semibold tracking-wide text-white">
-                Local Grocery Marketplace • Fast Delivery in {city}
-              </span>
-            </div>
+              return (
+                <div
+                  onMouseEnter={() => setIsHeroHovered(true)}
+                  onMouseLeave={() => setIsHeroHovered(false)}
+                  className={`relative rounded-3xl bg-gradient-to-r ${currentSlide.bgGradient} border border-slate-200/80 dark:border-[#2D3748] p-6 sm:p-10 overflow-hidden shadow-xs transition-colors duration-700`}
+                >
+                  <div key={heroSlide} className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center animate-slide-in-right">
+                    {/* Left Hero Content */}
+                    <div className="md:col-span-7 z-10 space-y-4">
+                      {/* Dynamic Tag */}
+                      <span className={`inline-flex items-center gap-1.5 ${currentSlide.tagClass} text-xs font-black px-3 py-1 rounded-full shadow-2xs`}>
+                        <TagIcon size={14} className={currentSlide.iconClass} />
+                        {currentSlide.tag}
+                      </span>
 
-            {/* Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight animate-fade-in-up">
-              Your favourite groceries,{' '}
-              <span className="text-yellow-300 underline decoration-yellow-400/40 decoration-wavy underline-offset-4">
-                delivered fresh
-              </span>
-            </h1>
+                      {/* Main Headline */}
+                      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight leading-tight">
+                        {currentSlide.title} <br className="hidden sm:inline" />
+                        <span className={currentSlide.highlightClass}>{currentSlide.titleHighlight}</span>
+                      </h1>
 
-            <p className="mt-4 text-sm sm:text-lg text-sky-100 max-w-2xl leading-relaxed animate-fade-in-up delay-100">
-              Discover trusted local shops near you, order fresh milk, vegetables, grains, and snacks. Choose doorstep delivery or quick store pickup with Cash on Delivery.
-            </p>
+                      {/* Subtitle */}
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-[#A7B3C5] font-medium max-w-lg leading-relaxed">
+                        {currentSlide.subtitle}
+                      </p>
 
-            {/* Location & Search Bar in Hero */}
-            <div className="mt-8 bg-white/95 backdrop-blur-md p-2.5 sm:p-3 rounded-3xl shadow-2xl border border-white/40 max-w-2xl animate-fade-in-up delay-200">
-              <form onSubmit={handleHeroSearch} className="flex flex-col sm:flex-row gap-2">
-                {/* Location Pill */}
+                      {/* Action CTAs */}
+                      <div className="flex flex-wrap items-center gap-3 pt-1">
+                        <Link
+                          to="/shops"
+                          className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center gap-2 cursor-pointer group"
+                        >
+                          <span>Explore Shops</span>
+                          <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            categoryScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                          className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-[#111827] text-slate-800 dark:text-[#F9FAFB] font-bold text-xs sm:text-sm border border-slate-200 dark:border-[#2D3748] transition-all cursor-pointer shadow-xs"
+                        >
+                          Browse Categories
+                        </button>
+                      </div>
+
+                      {/* Hero Search Box matching screenshot */}
+                      <form onSubmit={handleHeroSearch} className="pt-2 max-w-md">
+                        <div className="flex items-center bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-[#2D3748] p-1.5 shadow-sm focus-within:border-emerald-500 dark:focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 dark:focus-within:ring-emerald-500/20 transition-all">
+                          <div className="pl-3 text-slate-400 dark:text-[#A7B3C5]">
+                            <Search size={18} />
+                          </div>
+                          <input
+                            type="text"
+                            value={heroSearchInput}
+                            onFocus={() => setIsSearchFocused(true)}
+                            onBlur={() => setIsSearchFocused(false)}
+                            onChange={(e) => setHeroSearchInput(e.target.value)}
+                            placeholder="Search fresh vegetables, fruits, dairy, staples, or shops..."
+                            className="w-full px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 dark:text-[#F9FAFB] placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none bg-transparent"
+                          />
+                          <button
+                            type="submit"
+                            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 dark:shadow-emerald-950/40 transition-all shrink-0 cursor-pointer"
+                          >
+                            Search
+                          </button>
+                        </div>
+                      </form>
+
+                      {/* Trust Bullets below Search */}
+                      <div className="flex flex-wrap items-center gap-4 pt-3 text-xs font-bold text-slate-700 dark:text-[#A7B3C5]">
+                        <span className="flex items-center gap-1.5">
+                          <Store size={15} className="text-emerald-600 dark:text-emerald-400" /> Shop Local
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Leaf size={15} className="text-emerald-600 dark:text-emerald-400" /> Fresh Everyday Essentials
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Truck size={15} className="text-emerald-600 dark:text-emerald-400" /> Convenient Ordering
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <CreditCard size={15} className="text-amber-600 dark:text-amber-400" /> Cash on Delivery
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right Hero Image */}
+                    <div className="md:col-span-5 relative flex items-center justify-center">
+                      <div className="relative w-full max-w-sm aspect-4/3 flex items-center justify-center">
+                        {/* Handwritten Style Annotation */}
+                        <div className="absolute top-2 left-2 rotate-[-8deg] bg-white/95 dark:bg-[#111827]/95 backdrop-blur-xs px-3 py-1 rounded-xl shadow-xs border border-slate-100 dark:border-[#2D3748] z-10 hidden sm:block">
+                          <p className="text-[11px] font-black text-slate-800 dark:text-[#F9FAFB] tracking-wide font-serif italic">
+                            {currentSlide.note}
+                          </p>
+                        </div>
+
+                        <img
+                          src={currentSlide.image}
+                          alt={currentSlide.title}
+                          className="w-full h-full object-cover rounded-3xl shadow-lg border-2 border-white dark:border-[#2D3748]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Carousel Controls */}
+                  <button
+                    type="button"
+                    onClick={() => setHeroSlide((prev) => (prev === 0 ? HERO_SLIDES.length - 1 : prev - 1))}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 dark:bg-[#172033]/90 hover:bg-white dark:hover:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] border border-transparent dark:border-[#2D3748] shadow-md flex items-center justify-center transition-all cursor-pointer z-20"
+                    title="Previous Slide"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 dark:bg-[#172033]/90 hover:bg-white dark:hover:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] border border-transparent dark:border-[#2D3748] shadow-md flex items-center justify-center transition-all cursor-pointer z-20"
+                    title="Next Slide"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+
+                  {/* Slide Indicators with Progress Animation matching Image 1 */}
+                  <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                    {HERO_SLIDES.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setHeroSlide(idx)}
+                        className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                          heroSlide === idx ? 'w-6 bg-sky-600 dark:bg-emerald-400' : 'w-1.5 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600'
+                        }`}
+                        title={`Go to slide ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 2. SHOP BY CATEGORY matching Screenshot with Left/Right Scroll and "More" action */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">Shop by Category</h3>
+                  <p className="text-xs text-slate-500 dark:text-[#A7B3C5]">Click any category or "More" to move items right to left</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Category Rail Scroll Buttons */}
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#111827] p-1 rounded-xl border border-transparent dark:border-[#2D3748]">
+                    <button
+                      type="button"
+                      onClick={() => scrollCategory('left')}
+                      className="w-7 h-7 rounded-lg bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-[#111827] text-slate-700 dark:text-[#F9FAFB] shadow-2xs dark:shadow-none flex items-center justify-center transition-all cursor-pointer"
+                      title="Scroll categories left"
+                    >
+                      <ChevronLeft size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollCategory('right')}
+                      className="w-7 h-7 rounded-lg bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-[#111827] text-slate-700 dark:text-[#F9FAFB] shadow-2xs dark:shadow-none flex items-center justify-center transition-all cursor-pointer"
+                      title="Scroll categories right"
+                    >
+                      <ChevronRight size={15} />
+                    </button>
+                  </div>
+
+                  <Link
+                    to="/shops"
+                    className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 flex items-center gap-1 transition-colors pl-1"
+                  >
+                    View All <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Scrollable Category Rail with Snapping and "More" Action */}
+              <div
+                ref={categoryScrollRef}
+                className="flex gap-2.5 sm:gap-3 overflow-x-auto pb-2 scroll-smooth scrollbar-none snap-x snap-mandatory"
+              >
+                {/* All Categories Option */}
                 <button
                   type="button"
-                  onClick={openLocationModal}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-sky-50/80 hover:bg-sky-100/80 text-left text-slate-800 transition-colors border border-sky-100 shrink-0"
+                  onClick={() => handleSelectCategory('all')}
+                  className={`min-w-[85px] sm:min-w-[90px] p-3 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer shrink-0 snap-start ${
+                    selectedCategorySlug === 'all'
+                      ? 'border-sky-500 dark:border-emerald-400 bg-sky-50/70 dark:bg-[#12352D] ring-2 ring-sky-200 dark:ring-emerald-500/30 shadow-xs'
+                      : 'border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-slate-300 dark:hover:border-emerald-500/50 hover:bg-slate-50 dark:hover:bg-[#111827]'
+                  }`}
                 >
-                  <MapPin size={16} className="text-sky-600 shrink-0" />
-                  <div className="min-w-0 pr-1">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Deliver to</p>
-                    <p className="text-xs font-extrabold text-slate-900 truncate max-w-[130px]">{city}</p>
-                  </div>
-                  <span className="text-[10px] text-sky-700 font-bold bg-white px-1.5 py-0.5 rounded-md shadow-2xs">
-                    Change
-                  </span>
+                  <span className="text-2xl sm:text-3xl select-none">🛒</span>
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-[#F9FAFB] text-center line-clamp-1">All</span>
                 </button>
 
-                {/* Search Input */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-                  <input
-                    type="text"
-                    value={heroSearch}
-                    onChange={(e) => setHeroSearch(e.target.value)}
-                    placeholder="Search vegetables, milk, rice, biscuits..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 text-slate-900 text-xs sm:text-sm rounded-2xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-sky-500 font-medium placeholder-slate-400 border border-transparent"
-                  />
-                </div>
+                {POPULAR_CATEGORIES.map((cat) => {
+                  const isSelected = selectedCategorySlug === cat.slug;
+                  return (
+                    <button
+                      key={cat.slug}
+                      type="button"
+                      onClick={() => handleSelectCategory(cat.slug)}
+                      className={`min-w-[85px] sm:min-w-[90px] p-3 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer shrink-0 snap-start ${
+                        isSelected
+                          ? 'border-sky-500 dark:border-emerald-400 bg-sky-50/70 dark:bg-[#12352D] ring-2 ring-sky-200 dark:ring-emerald-500/30 shadow-xs'
+                          : 'border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-slate-300 dark:hover:border-emerald-500/50 hover:bg-slate-50 dark:hover:bg-[#111827]'
+                      }`}
+                    >
+                      <span className="text-2xl sm:text-3xl select-none">{cat.icon}</span>
+                      <span className="text-[11px] font-bold text-slate-800 dark:text-[#F9FAFB] text-center line-clamp-1">
+                        {cat.name}
+                      </span>
+                    </button>
+                  );
+                })}
 
-                {/* Search Button */}
+                {/* Dedicated "More" (⋯) Button matching Screenshot in Image 2 */}
                 <button
-                  type="submit"
-                  className="btn-primary py-2.5 px-6 rounded-2xl text-xs sm:text-sm font-bold shadow-md shadow-sky-600/30 whitespace-nowrap"
+                  type="button"
+                  onClick={handleCategoryMoreClick}
+                  className="min-w-[85px] sm:min-w-[90px] p-3 rounded-2xl border-2 border-sky-400 dark:border-emerald-500/60 bg-sky-50/60 dark:bg-[#12352D] hover:bg-sky-100 dark:hover:bg-[#12352D]/80 text-sky-700 dark:text-emerald-300 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer shrink-0 snap-start shadow-xs group"
+                  title="Click to move categories and products right to left"
                 >
-                  Search
-                </button>
-              </form>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-6 flex flex-wrap items-center gap-3 animate-fade-in-up delay-300">
-              <Link
-                to="/shops"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold rounded-2xl shadow-lg transition-all hover:scale-105 active:scale-95 text-xs sm:text-sm"
-              >
-                <Store size={17} /> Find Nearby Shops
-              </Link>
-              <Link
-                to="/shops"
-                className="inline-flex items-center gap-2 px-5 py-3 bg-white/15 hover:bg-white/25 text-white font-bold rounded-2xl backdrop-blur-md border border-white/25 transition-all text-xs sm:text-sm"
-              >
-                Browse All Products <ArrowRight size={15} />
-              </Link>
-            </div>
-
-            {/* Trust Stats */}
-            <div className="mt-10 pt-6 border-t border-white/15 grid grid-cols-3 gap-4 max-w-lg animate-fade-in-up delay-400">
-              <div>
-                <p className="text-2xl sm:text-3xl font-black text-white">500+</p>
-                <p className="text-[11px] sm:text-xs text-sky-200 mt-0.5 font-medium">Local Shops</p>
-              </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-black text-white">10K+</p>
-                <p className="text-[11px] sm:text-xs text-sky-200 mt-0.5 font-medium">Grocery Items</p>
-              </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-black text-yellow-300">2 hrs</p>
-                <p className="text-[11px] sm:text-xs text-sky-200 mt-0.5 font-medium">Avg. Delivery</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ──────────────────────────────────────────────────────────
-          2. DELIVERY VS PICKUP QUICK SELECTOR
-         ────────────────────────────────────────────────────────── */}
-      <section className="bg-white border-b border-slate-100 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-sky-600">FLEXIBLE FULFILLMENT</p>
-              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">
-                How would you like to receive your order?
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  setOrderPreference('delivery');
-                  toast.success('Preference set to Home Delivery');
-                }}
-                className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${
-                  orderPreference === 'delivery'
-                    ? 'border-sky-500 bg-sky-50/70 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
-                }`}
-              >
-                <div
-                  className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-                    orderPreference === 'delivery' ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  <Truck size={20} />
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                    Home Delivery
-                    {orderPreference === 'delivery' && <CheckCircle2 size={14} className="text-sky-600" />}
-                  </p>
-                  <p className="text-[11px] text-slate-500">Delivered to your doorstep</p>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setOrderPreference('pickup');
-                  toast.success('Preference set to Store Pickup');
-                }}
-                className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${
-                  orderPreference === 'pickup'
-                    ? 'border-sky-500 bg-sky-50/70 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
-                }`}
-              >
-                <div
-                  className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-                    orderPreference === 'pickup' ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  <Store size={20} />
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                    Store Pickup
-                    {orderPreference === 'pickup' && <CheckCircle2 size={14} className="text-sky-600" />}
-                  </p>
-                  <p className="text-[11px] text-slate-500">Zero wait, pickup at shop</p>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ──────────────────────────────────────────────────────────
-          3. TODAY'S OFFERS & PROMOTIONS
-         ────────────────────────────────────────────────────────── */}
-      <section className="py-8 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
-                <Percent size={15} />
-              </div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">Today's Deals & Offers</h2>
-            </div>
-            <span className="text-xs font-bold text-slate-400">Cash on Delivery Applicable</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {OFFERS.map((offer) => (
-              <div
-                key={offer.code}
-                className={`relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br ${offer.bg} text-white shadow-md flex items-center justify-between gap-4`}
-              >
-                <div className="relative z-10">
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 backdrop-blur-xs px-2 py-0.5 rounded-full">
-                    {offer.badge}
+                  <span className="text-2xl sm:text-3xl font-black group-hover:scale-110 transition-transform">⋯</span>
+                  <span className="text-[11px] font-black text-sky-800 dark:text-emerald-200 text-center flex items-center gap-0.5">
+                    More <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
                   </span>
-                  <h3 className="text-xl font-black mt-2 leading-tight">{offer.title}</h3>
-                  <p className="text-xs text-white/90 mt-1">{offer.desc}</p>
-
-                  <button
-                    onClick={() => copyCoupon(offer.code)}
-                    className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-slate-900 rounded-xl text-xs font-black hover:bg-slate-100 transition-colors shadow-xs"
-                  >
-                    <span>Use: {offer.code}</span>
-                    <Copy size={12} className="text-slate-400" />
-                  </button>
-                </div>
-
-                <div className="h-16 w-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20">
-                  <Tag size={28} className="text-white/80" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ──────────────────────────────────────────────────────────
-          4. NEARBY GROCERY SHOPS (REAL MONGODB DATA)
-         ────────────────────────────────────────────────────────── */}
-      <section className="py-10 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <Store className="h-5 w-5 text-sky-600" />
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Nearby Grocery Shops
-                </h2>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Verified stores near <span className="font-bold text-slate-700">{city}</span> with fresh stock
-              </p>
-            </div>
-
-            <Link
-              to="/shops"
-              className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-sky-600 hover:text-sky-700 hover:underline group"
-            >
-              <span>View All ({shops.length})</span>
-              <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-
-          {loadingShops ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {[1, 2, 3].map((n) => (
-                <div key={n} className="card overflow-hidden">
-                  <div className="h-44 skeleton rounded-t-2xl" />
-                  <div className="p-4 space-y-2">
-                    <div className="h-5 skeleton rounded-lg w-3/4" />
-                    <div className="h-3 skeleton rounded-lg w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : shops.length === 0 ? (
-            <div className="card p-10 text-center border-dashed border-2 border-slate-200">
-              <Store className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-base font-extrabold text-slate-800">No shops registered in this area</h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                Try switching your delivery location or register as a shop owner to open a store here!
-              </p>
-              <div className="mt-4 flex items-center justify-center gap-3">
-                <button onClick={openLocationModal} className="btn-secondary py-2 px-4 rounded-xl text-xs font-bold">
-                  Change Location
                 </button>
-                <Link to="/register" className="btn-primary py-2 px-4 rounded-xl text-xs font-bold">
-                  Open a Shop
-                </Link>
               </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {shops.map((shop, i) => (
+
+            {/* 3. NEARBY SHOPS matching Screenshot */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">Nearby Shops</h3>
                 <Link
-                  key={shop._id}
-                  to={`/shops/${shop._id}`}
-                  className="card card-hover group block overflow-hidden border border-slate-100 hover:border-sky-200 shadow-sm hover:shadow-xl transition-all"
+                  to="/shops"
+                  className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 flex items-center gap-1 transition-colors"
                 >
-                  {/* Shop Banner Image */}
-                  <div className="relative h-44 bg-slate-100 overflow-hidden">
-                    {shop.shopImage ? (
-                      <img
-                        src={shop.shopImage}
-                        alt={shop.shopName}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 text-sky-700">
-                        <Store size={36} />
-                        <span className="text-xs font-bold mt-2">{shop.shopName}</span>
-                      </div>
-                    )}
-
-                    {/* Distance Badge */}
-                    {shop.distance !== undefined ? (
-                      <div className="absolute top-3 right-3 glass px-2.5 py-1 rounded-full text-xs font-extrabold text-sky-800 flex items-center gap-1 shadow-sm">
-                        <MapPin size={11} className="text-sky-600" />
-                        {shop.distance.toFixed(1)} km
-                      </div>
-                    ) : (
-                      <div className="absolute top-3 right-3 glass px-2.5 py-1 rounded-full text-xs font-extrabold text-slate-700 flex items-center gap-1 shadow-sm">
-                        <Clock size={11} className="text-slate-500" />
-                        25-35 min
-                      </div>
-                    )}
-
-                    {/* Rating Badge */}
-                    <div className="absolute bottom-3 left-3 bg-white/95 px-2 py-0.5 rounded-lg text-xs font-black text-slate-900 flex items-center gap-1 shadow-xs">
-                      <Star size={12} className="text-amber-500 fill-amber-500" />
-                      4.8
-                    </div>
-                  </div>
-
-                  {/* Shop Details */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-extrabold text-slate-900 text-base group-hover:text-sky-600 transition-colors truncate">
-                        {shop.shopName}
-                      </h3>
-                    </div>
-
-                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1 truncate">
-                      <MapPin size={12} className="text-slate-400 shrink-0" />
-                      {shop.address}, {shop.city}
-                    </p>
-
-                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        {shop.deliveryAvailable && (
-                          <span className="badge-green text-[10px] py-0.5">🚚 Delivery</span>
-                        )}
-                        {shop.pickupAvailable && (
-                          <span className="badge-blue text-[10px] py-0.5">🛍 Pickup</span>
-                        )}
-                      </div>
-                      <span className="font-bold text-slate-700">
-                        Min. ₹{shop.minimumOrderAmount}
-                      </span>
-                    </div>
-                  </div>
+                  View All <ArrowRight size={13} />
                 </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ──────────────────────────────────────────────────────────
-          5. SHOP CATEGORIES (CLICKABLE & FILTERABLE)
-         ────────────────────────────────────────────────────────── */}
-      <section className="py-12 bg-slate-50 border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-sky-600">BROWSE AISLES</p>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
-                Shop by Category
-              </h2>
-            </div>
-            <Link to="/shops" className="text-xs sm:text-sm font-bold text-sky-600 hover:underline">
-              All Aisles →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-3">
-            {categories.map((cat) => (
-              <Link
-                key={cat._id}
-                to={`/shops?categoryId=${cat._id}`}
-                className="card p-3 sm:p-4 text-center hover:border-sky-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 group flex flex-col items-center justify-center"
-              >
-                <div className="text-3xl sm:text-4xl mb-1.5 group-hover:scale-110 transition-transform">
-                  {CATEGORY_EMOJIS[cat.name] || '🛒'}
-                </div>
-                <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-sky-600 transition-colors">
-                  {cat.name}
-                </p>
-                <span className="text-[10px] text-slate-400 mt-0.5 font-medium">Explore</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ──────────────────────────────────────────────────────────
-          6. POPULAR PRODUCTS (REAL MONGODB DATA WITH ADD TO CART)
-         ────────────────────────────────────────────────────────── */}
-      <section className="py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-emerald-600" />
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Popular Products Near You
-                </h2>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Fast selling daily groceries from verified local shops
-              </p>
-            </div>
+              <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mb-4">Find fresh products from shops near you</p>
 
-            <Link
-              to="/shops"
-              className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-sky-600 hover:underline"
-            >
-              <span>View All</span>
-              <ChevronRight size={16} />
-            </Link>
-          </div>
-
-          {loadingProducts ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((n) => (
-                <div key={n} className="card p-3 space-y-3">
-                  <div className="h-32 skeleton rounded-xl" />
-                  <div className="h-4 skeleton rounded-lg w-3/4" />
-                  <div className="h-4 skeleton rounded-lg w-1/2" />
+              {loadingShops ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <ShopCardSkeleton count={3} />
                 </div>
-              ))}
+              ) : shops.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 dark:bg-[#172033] rounded-3xl border border-slate-100 dark:border-[#2D3748] text-slate-400 dark:text-[#A7B3C5]">
+                  <Store size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                  <p className="text-sm font-bold text-slate-700 dark:text-[#F9FAFB]">No nearby shops available</p>
+                  <p className="text-xs mt-1">Please check back soon or try another location</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {shops.slice(0, 3).map((shop, sIdx) => {
+                    const fallbackImages = [
+                      'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80',
+                      'https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?auto=format&fit=crop&w=600&q=80',
+                      'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=600&q=80',
+                    ];
+                    const shopImg = shop.shopImage || fallbackImages[sIdx % fallbackImages.length];
+
+                    return (
+                      <div
+                        key={shop._id}
+                        className="rounded-3xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-slate-300 dark:hover:border-emerald-500/50 hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between group"
+                      >
+                        {/* Storefront Image */}
+                        <div className="relative h-36 bg-slate-100 dark:bg-[#111827] overflow-hidden">
+                          <img
+                            src={shopImg}
+                            alt={shop.shopName}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          {/* Open Badge */}
+                          <span className="absolute top-2.5 right-2.5 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                            Open
+                          </span>
+                        </div>
+
+                        {/* Shop Info */}
+                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <MapPin size={13} className="text-sky-600 dark:text-emerald-400 shrink-0" />
+                              <h4 className="text-sm font-black text-slate-900 dark:text-[#F9FAFB] truncate">{shop.shopName}</h4>
+                            </div>
+
+                            {/* Ratings & Reviews */}
+                            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#A7B3C5] mt-1">
+                              <Star size={13} className="text-amber-500 fill-amber-500" />
+                              <span className="font-bold text-slate-800 dark:text-[#F9FAFB]">4.5</span>
+                              <span className="text-slate-400 dark:text-slate-500">({90 + sIdx * 34} reviews)</span>
+                            </div>
+
+                            {/* Honest Distance or City */}
+                            <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-1">
+                              {typeof shop.distance === 'number' && !isNaN(shop.distance)
+                                ? `${shop.distance.toFixed(1)} km away`
+                                : `${shop.city || 'Pollachi'}`}
+                            </p>
+
+                            {/* Service Badges */}
+                            <div className="flex items-center gap-3 text-[11px] font-bold text-slate-600 dark:text-[#A7B3C5] mt-2">
+                              <span className="flex items-center gap-1">
+                                <Truck size={12} className="text-sky-600 dark:text-emerald-400" /> Delivery
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <ShoppingBag size={12} className="text-purple-600 dark:text-purple-400" /> Pickup
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Action Button */}
+                          <Link
+                            to={`/shops/${shop._id}`}
+                            className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black text-xs text-center shadow-md shadow-sky-600/20 dark:shadow-emerald-950/40 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            View Shop <ArrowRight size={13} />
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          ) : popularProducts.length === 0 ? (
-            <div className="card p-10 text-center border-dashed border-2 border-slate-200">
-              <ShoppingBag className="h-10 w-10 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-700">No products available right now</p>
-              <p className="text-xs text-slate-400 mt-1">Check back soon or browse shops</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5">
-              {popularProducts.map((product) => {
-                const shopName =
-                  typeof product.shopId === 'object' && product.shopId
-                    ? (product.shopId as Shop).shopName
-                    : 'Local Store';
-                const isAdded = addedItemIds[product._id];
 
-                return (
-                  <div
-                    key={product._id}
-                    className="card p-3.5 hover:shadow-xl hover:border-sky-200 transition-all flex flex-col justify-between group"
-                  >
-                    {/* Thumbnail */}
-                    <div className="relative h-36 bg-slate-50 rounded-2xl p-2 flex items-center justify-center overflow-hidden border border-slate-100">
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="h-full w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <ShoppingBag size={32} className="text-slate-300" />
-                      )}
+            {/* 4. ALL PRODUCTS: Responsive Grid showing the entire product catalog + Slider View Toggle */}
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">
+                      All Grocery Products
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full bg-sky-100 dark:bg-[#12352D] text-sky-800 dark:text-emerald-300 text-[11px] font-black uppercase tracking-wider">
+                      {filteredProducts.length} items
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-0.5">
+                    Showing the entire product range • Farm fresh veggies, dairy, staples & daily needs
+                  </p>
+                </div>
 
-                      {/* Low Stock Badge */}
-                      {product.stock <= 5 && product.stock > 0 && (
-                        <span className="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-2xs">
-                          {product.stock} left
-                        </span>
-                      )}
-                    </div>
+                {/* View Mode Toggle (Grid View / Slider View) & Navigation */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex items-center bg-slate-100 dark:bg-[#111827] p-1 rounded-xl border border-slate-200/60 dark:border-[#2D3748]">
+                    <button
+                      type="button"
+                      onClick={() => setProductViewMode('grid')}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        productViewMode === 'grid'
+                          ? 'bg-white dark:bg-[#172033] text-sky-700 dark:text-emerald-400 shadow-2xs dark:shadow-none font-black'
+                          : 'text-slate-600 dark:text-[#A7B3C5] hover:text-slate-900 dark:hover:text-[#F9FAFB]'
+                      }`}
+                      title="Show all products in responsive grid"
+                    >
+                      <LayoutGrid size={14} />
+                      <span>Grid View</span>
+                    </button>
 
-                    {/* Meta */}
-                    <div className="mt-3">
-                      <p className="text-[11px] font-bold text-sky-700 truncate flex items-center gap-1">
-                        <Store size={11} /> {shopName}
-                      </p>
-                      <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 mt-1 line-clamp-2 leading-tight">
-                        {product.name}
-                      </h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{product.unit}</p>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProductViewMode('carousel')}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        productViewMode === 'carousel'
+                          ? 'bg-white dark:bg-[#172033] text-sky-700 dark:text-emerald-400 shadow-2xs dark:shadow-none font-black'
+                          : 'text-slate-600 dark:text-[#A7B3C5] hover:text-slate-900 dark:hover:text-[#F9FAFB]'
+                      }`}
+                      title="Browse products in horizontal slider"
+                    >
+                      <SlidersHorizontal size={14} />
+                      <span>Slider View</span>
+                    </button>
+                  </div>
 
-                    {/* Price and Add button */}
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-sm sm:text-base font-black text-slate-900">
-                        ₹{product.price}
-                      </span>
-
+                  {/* Horizontal Scroll Arrows (Active when in Slider View) */}
+                  {productViewMode === 'carousel' && (
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#111827] p-1 rounded-xl border border-transparent dark:border-[#2D3748]">
                       <button
                         type="button"
-                        onClick={() => handleAddToCart(product)}
-                        disabled={!product.isAvailable || product.stock <= 0}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black shadow-xs transition-all active:scale-95 ${
-                          isAdded
-                            ? 'bg-emerald-600 text-white'
-                            : 'btn-primary'
-                        } disabled:opacity-50`}
+                        onClick={() => scrollProducts('left')}
+                        className="w-7 h-7 rounded-lg bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-[#111827] text-slate-700 dark:text-[#F9FAFB] shadow-2xs dark:shadow-none flex items-center justify-center transition-all cursor-pointer"
+                        title="Move products left to right"
                       >
-                        {isAdded ? (
-                          <>
-                            <Check size={13} /> Added
-                          </>
-                        ) : (
-                          <>
-                            <Plus size={13} /> Add
-                          </>
-                        )}
+                        <ChevronLeft size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scrollProducts('right')}
+                        className="w-7 h-7 rounded-lg bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-[#111827] text-slate-700 dark:text-[#F9FAFB] shadow-2xs dark:shadow-none flex items-center justify-center transition-all cursor-pointer"
+                        title="Move products right to left"
+                      >
+                        <ChevronRight size={15} />
                       </button>
                     </div>
+                  )}
+
+                  <Link
+                    to="/shops"
+                    className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 flex items-center gap-1 transition-colors pl-1"
+                  >
+                    View Shops <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </div>
+
+              {loadingProducts ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-4 py-2">
+                  <ProductCardSkeleton count={8} />
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 dark:bg-[#172033] rounded-3xl border border-slate-100 dark:border-[#2D3748] text-slate-400 dark:text-[#A7B3C5]">
+                  <Package size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                  <p className="text-sm font-bold text-slate-700 dark:text-[#F9FAFB]">No products found in this category</p>
+                  <button
+                    onClick={() => handleSelectCategory('all')}
+                    className="mt-3 text-xs font-bold text-sky-600 dark:text-emerald-400 underline cursor-pointer"
+                  >
+                    Show all products
+                  </button>
+                </div>
+              ) : productViewMode === 'grid' ? (
+                /* Responsive Grid displaying the entire products in full view */
+                <div
+                  key={`grid-${productAnimKey}`}
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-4 pt-2 animate-slide-in-right"
+                >
+                  {filteredProducts.map((product, pIdx) => {
+                    const originalPrice = product.originalPrice || Math.round(product.price * 1.3);
+                    const discount =
+                      product.discountPercentage ||
+                      Math.max(8, Math.round(((originalPrice - product.price) / originalPrice) * 100));
+                    const cartQty = getCartQuantity(product._id);
+                    const isOutOfStock = product.stock <= 0 || !product.isAvailable;
+                    const isFav = isFavorite(product._id);
+
+                    return (
+                      <div
+                        key={product._id}
+                        className="rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-sky-300 dark:hover:border-emerald-500/50 hover:shadow-lg transition-all p-3.5 flex flex-col justify-between group relative"
+                      >
+                        {/* Heart / Favourite Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!isAuthenticated) {
+                              toast.info('Please sign in to save favourite products');
+                              navigate('/login');
+                              return;
+                            }
+                            const isNowFav = await toggleFavorite(product);
+                            toast.success(
+                              isNowFav
+                                ? `Added ${product.name} to favourites`
+                                : `Removed ${product.name} from favourites`
+                            );
+                          }}
+                          className="absolute top-2.5 right-2.5 z-20 h-7 w-7 rounded-full bg-white/90 dark:bg-[#111827]/90 backdrop-blur-xs text-slate-400 dark:text-[#A7B3C5] hover:text-red-500 flex items-center justify-center shadow-xs transition-all cursor-pointer"
+                          title={isFav ? 'Remove from favourites' : 'Save to favourites'}
+                        >
+                          <Heart size={14} className={isFav ? 'fill-red-500 text-red-500' : ''} />
+                        </button>
+
+                        {/* Image & Discount Badge */}
+                        <Link to={`/products/${product._id}`} className="block">
+                          <div className="relative aspect-square rounded-xl bg-slate-50 dark:bg-[#111827] p-2.5 flex items-center justify-center overflow-hidden mb-2">
+                            {/* Green Discount Badge */}
+                            <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-2xs z-10">
+                              {discount}% OFF
+                            </span>
+
+                            {product.imageUrl ? (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-300"
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = PRODUCT_FALLBACK_IMAGE;
+                                }}
+                              />
+                            ) : (
+                              <Package size={32} className="text-slate-300 dark:text-slate-600" />
+                            )}
+                          </div>
+
+                          {/* Title & Weight */}
+                          <h5 className="text-xs sm:text-sm font-black text-slate-900 dark:text-[#F9FAFB] group-hover:text-sky-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1 leading-snug">
+                            {product.name}
+                          </h5>
+                          <p className="text-[10px] text-slate-400 dark:text-[#A7B3C5] mt-0.5">
+                            {product.unit} (Approx.)
+                          </p>
+
+                          {/* Rating Snippet */}
+                          <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-[#A7B3C5] mt-1">
+                            <Star size={11} className="text-amber-500 fill-amber-500" />
+                            <span className="font-bold text-slate-800 dark:text-[#F9FAFB]">4.5</span>
+                            <span className="text-slate-400 dark:text-slate-500">({100 + pIdx * 18})</span>
+                          </div>
+
+                          {/* Price */}
+                          <div className="mt-1 flex items-baseline gap-1.5">
+                            <span className="text-sm sm:text-base font-black text-slate-900 dark:text-[#F9FAFB]">
+                              ₹{product.price}
+                            </span>
+                            {originalPrice > product.price && (
+                              <span className="text-[11px] text-slate-400 dark:text-[#A7B3C5]/70 line-through font-semibold">
+                                ₹{originalPrice}
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+
+                        {/* Add to Cart / Stepper Button */}
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-[#2D3748]">
+                          {isOutOfStock ? (
+                            <button
+                              disabled
+                              className="w-full py-2 rounded-xl bg-slate-100 dark:bg-[#111827] text-slate-400 dark:text-slate-500 font-bold text-[11px] cursor-not-allowed"
+                            >
+                              Out of Stock
+                            </button>
+                          ) : cartQty > 0 ? (
+                            <div className="flex items-center justify-between bg-sky-600 dark:bg-emerald-600 text-white rounded-xl p-1 shadow-xs">
+                              <button
+                                type="button"
+                                onClick={() => handleDecrement(product._id, cartQty)}
+                                className="w-6 h-6 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
+                              >
+                                <Minus size={12} />
+                              </button>
+                              <span className="text-xs font-black px-2">{cartQty}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleIncrement(product._id, cartQty, product.stock)}
+                                className="w-6 h-6 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleAddToCart(product)}
+                              className="w-full py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm shadow-sky-600/20 dark:shadow-emerald-950/40 transition-all cursor-pointer"
+                            >
+                              <ShoppingCart size={13} /> Add to Cart
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* Horizontal Scroll Slider */
+                <div
+                  ref={productScrollRef}
+                  key={`carousel-${productAnimKey}`}
+                  className="flex gap-4 overflow-x-auto pb-4 pt-2 px-1 scroll-smooth scrollbar-none snap-x snap-mandatory animate-slide-in-right"
+                >
+                  {filteredProducts.map((product, pIdx) => {
+                    const originalPrice = product.originalPrice || Math.round(product.price * 1.3);
+                    const discount =
+                      product.discountPercentage ||
+                      Math.max(8, Math.round(((originalPrice - product.price) / originalPrice) * 100));
+                    const cartQty = getCartQuantity(product._id);
+                    const isOutOfStock = product.stock <= 0 || !product.isAvailable;
+                    const isFav = isFavorite(product._id);
+
+                    return (
+                      <div
+                        key={product._id}
+                        className="min-w-[185px] sm:min-w-[205px] max-w-[215px] shrink-0 snap-start rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-sky-300 dark:hover:border-emerald-500/50 hover:shadow-lg transition-all p-3.5 flex flex-col justify-between group relative"
+                      >
+                        {/* Heart / Favourite Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!isAuthenticated) {
+                              toast.info('Please sign in to save favourite products');
+                              navigate('/login');
+                              return;
+                            }
+                            const isNowFav = await toggleFavorite(product);
+                            toast.success(
+                              isNowFav
+                                ? `Added ${product.name} to favourites`
+                                : `Removed ${product.name} from favourites`
+                            );
+                          }}
+                          className="absolute top-2.5 right-2.5 z-20 h-7 w-7 rounded-full bg-white/90 dark:bg-[#111827]/90 backdrop-blur-xs text-slate-400 dark:text-[#A7B3C5] hover:text-red-500 flex items-center justify-center shadow-xs transition-all cursor-pointer"
+                          title={isFav ? 'Remove from favourites' : 'Save to favourites'}
+                        >
+                          <Heart size={14} className={isFav ? 'fill-red-500 text-red-500' : ''} />
+                        </button>
+
+                        {/* Image & Discount Badge */}
+                        <Link to={`/products/${product._id}`} className="block">
+                          <div className="relative aspect-square rounded-xl bg-slate-50 dark:bg-[#111827] p-2 flex items-center justify-center overflow-hidden mb-2">
+                            {/* Green Discount Badge */}
+                            <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-2xs z-10">
+                              {discount}% OFF
+                            </span>
+
+                            {product.imageUrl ? (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-300"
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = PRODUCT_FALLBACK_IMAGE;
+                                }}
+                              />
+                            ) : (
+                              <Package size={32} className="text-slate-300 dark:text-slate-600" />
+                            )}
+                          </div>
+
+                          {/* Title & Weight */}
+                          <h5 className="text-xs font-black text-slate-900 dark:text-[#F9FAFB] group-hover:text-sky-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1 leading-snug">
+                            {product.name}
+                          </h5>
+                          <p className="text-[10px] text-slate-400 dark:text-[#A7B3C5] mt-0.5">
+                            {product.unit} (Approx.)
+                          </p>
+
+                          {/* Rating Snippet */}
+                          <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-[#A7B3C5] mt-1">
+                            <Star size={11} className="text-amber-500 fill-amber-500" />
+                            <span className="font-bold text-slate-800 dark:text-[#F9FAFB]">4.5</span>
+                            <span className="text-slate-400 dark:text-slate-500">({100 + pIdx * 18})</span>
+                          </div>
+
+                          {/* Price */}
+                          <div className="mt-1 flex items-baseline gap-1.5">
+                            <span className="text-sm font-black text-slate-900 dark:text-[#F9FAFB]">
+                              ₹{product.price}
+                            </span>
+                            {originalPrice > product.price && (
+                              <span className="text-[11px] text-slate-400 dark:text-[#A7B3C5]/70 line-through font-semibold">
+                                ₹{originalPrice}
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+
+                        {/* Add to Cart / Stepper Button */}
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-[#2D3748]">
+                          {isOutOfStock ? (
+                            <button
+                              disabled
+                              className="w-full py-1.5 rounded-xl bg-slate-100 dark:bg-[#111827] text-slate-400 dark:text-slate-500 font-bold text-[11px] cursor-not-allowed"
+                            >
+                              Out of Stock
+                            </button>
+                          ) : cartQty > 0 ? (
+                            <div className="flex items-center justify-between bg-sky-600 dark:bg-emerald-600 text-white rounded-xl p-1 shadow-xs">
+                              <button
+                                type="button"
+                                onClick={() => handleDecrement(product._id, cartQty)}
+                                className="w-6 h-6 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
+                              >
+                                <Minus size={12} />
+                              </button>
+                              <span className="text-xs font-black px-2">{cartQty}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleIncrement(product._id, cartQty, product.stock)}
+                                className="w-6 h-6 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleAddToCart(product)}
+                              className="w-full py-1.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm shadow-sky-600/20 dark:shadow-emerald-950/40 transition-all cursor-pointer"
+                            >
+                              <ShoppingCart size={13} /> Add to Cart
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 5. PROMOTIONAL COMMUNITY BANNER */}
+            <div className="rounded-3xl bg-gradient-to-r from-[#064E3B] via-[#059669] to-[#047857] text-white p-6 sm:p-8 shadow-md relative overflow-hidden">
+              <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-white/10 to-transparent pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-2 max-w-xl">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-xs text-[11px] font-black uppercase tracking-wider text-emerald-200">
+                    <Sparkles size={13} className="text-amber-300" />
+                    Community First
                   </div>
-                );
-              })}
+                  <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    Support Your Local Community Stores
+                  </h3>
+                  <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-medium">
+                    Every order directly strengthens independent grocers and local family farms across Pollachi & Coimbatore. Enjoy genuine freshness at honest neighbourhood prices.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <Link
+                    to="/shops"
+                    className="px-5 py-3 rounded-xl bg-white text-emerald-900 font-extrabold text-xs sm:text-sm hover:bg-emerald-50 transition-all shadow-md flex items-center gap-2 cursor-pointer group"
+                  >
+                    <span>Explore Verified Shops</span>
+                    <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      </section>
 
-      {/* ──────────────────────────────────────────────────────────
-          7. HOW LOCALGROCERY WORKS (5-STEP WORKFLOW)
-         ────────────────────────────────────────────────────────── */}
-      <section className="py-16 bg-gradient-to-b from-slate-50 to-white border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-xl mx-auto mb-12">
-            <span className="text-xs font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-3 py-1 rounded-full border border-sky-100">
-              SIMPLE & HASSLE-FREE
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-3">
-              How LocalGrocery Works
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-2">
-              Order fresh groceries from your nearby neighborhood shop in 5 easy steps
-            </p>
+            {/* 6. WHY SHOP LOCALLY (4 BENEFITS GRID) */}
+            <div className="space-y-4 pt-1">
+              <div>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">
+                  Why Shop Locally?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-0.5">
+                  Direct access to your neighbourhood grocers with modern digital convenience
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] p-5 space-y-3 transition-all hover:border-emerald-300 dark:hover:border-emerald-500 hover:shadow-md group">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-[#12352D] text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Store size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-[#F9FAFB]">
+                      Neighbourhood Stores
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-1 leading-relaxed">
+                      Discover trusted independent stores right around your street corner with authentic inventory.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] p-5 space-y-3 transition-all hover:border-emerald-300 dark:hover:border-emerald-500 hover:shadow-md group">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-[#12352D] text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Leaf size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-[#F9FAFB]">
+                      Farm-Fresh Essentials
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-1 leading-relaxed">
+                      Daily harvested vegetables, farm dairy, eggs, and authentic regional staples packed with care.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] p-5 space-y-3 transition-all hover:border-emerald-300 dark:hover:border-emerald-500 hover:shadow-md group">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-[#12352D] text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Truck size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-[#F9FAFB]">
+                      Convenient Ordering
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-1 leading-relaxed">
+                      Enjoy swift doorstep delivery or quick in-store counter pickup at your preferred schedule.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] p-5 space-y-3 transition-all hover:border-emerald-300 dark:hover:border-emerald-500 hover:shadow-md group">
+                  <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <CreditCard size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-[#F9FAFB]">
+                      Cash on Delivery
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-1 leading-relaxed">
+                      Zero advance payment worries. Inspect your package and pay comfortably at your doorstep.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {STEPS.map((step) => (
-              <div
-                key={step.step}
-                className="relative card p-5 text-center flex flex-col items-center hover:shadow-xl transition-all border border-slate-100"
+          {/* ======================================================== */}
+          {/* RIGHT SIDEBAR: Desktop / Laptop / Monitor Only           */}
+          {/* Hidden on tablet, android, iphone, and mobile devices    */}
+          {/* ======================================================== */}
+          <div className="hidden lg:block lg:col-span-4 xl:col-span-3 space-y-5 sticky top-24">
+            {/* Widget 1: My Account Card */}
+            <div className="rounded-3xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] p-4 shadow-xs">
+              <Link
+                to={isAuthenticated ? '/orders' : '/login'}
+                className="flex items-center justify-between group"
               >
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full gradient-primary text-white font-black text-xs flex items-center justify-center shadow-md">
-                  {step.step}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#111827] text-slate-700 dark:text-[#F9FAFB] flex items-center justify-center font-black overflow-hidden border border-slate-200 dark:border-[#2D3748]">
+                    {isAuthenticated && user?.profileImage ? (
+                      <img src={user.profileImage} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={20} className="text-slate-500 dark:text-[#A7B3C5]" />
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-400 dark:text-[#A7B3C5] uppercase tracking-wider">My Account</h4>
+                    <p className="text-xs font-black text-slate-900 dark:text-[#F9FAFB] group-hover:text-sky-600 dark:group-hover:text-emerald-400 transition-colors">
+                      {isAuthenticated && user ? `Welcome, ${user.name}` : 'Welcome, Guest'}
+                    </p>
+                  </div>
                 </div>
+                <ChevronRight size={18} className="text-slate-400 group-hover:text-sky-600 dark:group-hover:text-emerald-400 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
 
-                <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center mt-3 mb-3 border border-slate-100">
-                  {step.icon}
+            {/* Widget 2: Delivery Address Card */}
+            <div className="rounded-3xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] p-4 shadow-xs space-y-2">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-[#12352D] text-sky-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <MapPin size={16} />
                 </div>
-
-                <h3 className="font-extrabold text-sm text-slate-900 leading-tight">{step.title}</h3>
-                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{step.desc}</p>
+                <div className="flex-1">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-[#F9FAFB]">Delivery Address</h4>
+                  <p className="text-xs text-slate-600 dark:text-[#A7B3C5] mt-1 leading-snug line-clamp-2">
+                    {addressString}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openAddressModal()}
+                    className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 mt-1.5 inline-block cursor-pointer"
+                  >
+                    Change Address
+                  </button>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Widget 3: Quick Links Card */}
+            <div className="rounded-3xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] p-4 shadow-xs space-y-3">
+              <h4 className="text-xs font-black text-slate-900 dark:text-[#F9FAFB] uppercase tracking-wider">Quick Links</h4>
+              <div className="space-y-2 text-xs font-bold text-slate-700 dark:text-[#A7B3C5]">
+                <Link
+                  to="/orders"
+                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-sky-600 dark:hover:text-emerald-400 transition-colors"
+                >
+                  <ShoppingBag size={15} className="text-slate-400 dark:text-[#A7B3C5]" /> My Orders
+                </Link>
+                <Link
+                  to="/favourites"
+                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-sky-600 dark:hover:text-emerald-400 transition-colors"
+                >
+                  <Heart size={15} className="text-slate-400 dark:text-[#A7B3C5]" /> Favorites
+                </Link>
+                <Link
+                  to="/help"
+                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-sky-600 dark:hover:text-emerald-400 transition-colors"
+                >
+                  <HelpCircle size={15} className="text-slate-400 dark:text-[#A7B3C5]" /> Help & Support
+                </Link>
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-sky-600 dark:hover:text-emerald-400 transition-colors"
+                >
+                  <Settings size={15} className="text-slate-400 dark:text-[#A7B3C5]" /> Settings
+                </Link>
+              </div>
+            </div>
+
+            {/* Widget 4: Free Delivery Promotional Banner */}
+            <div className="rounded-3xl bg-gradient-to-br from-sky-50 to-blue-50/60 dark:from-[#172033] dark:to-[#111827] border border-sky-100 dark:border-[#2D3748] p-4 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-sky-600 dark:bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-sky-600/20 dark:shadow-emerald-950/40">
+                <Truck size={20} />
+              </div>
+              <div className="flex-1">
+                <h5 className="text-xs font-black text-slate-900 dark:text-[#F9FAFB] flex items-center justify-between">
+                  Free Delivery
+                  <Leaf size={14} className="text-emerald-600 dark:text-emerald-400" />
+                </h5>
+                <p className="text-[11px] text-slate-500 dark:text-[#A7B3C5] font-medium mt-0.5">
+                  On orders above ₹499
+                </p>
+              </div>
+            </div>
+
+            {/* Widget 5: Your Cart (Interactive Mini Cart matching Screenshot) */}
+            <div className="rounded-3xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-slate-900 dark:text-[#F9FAFB]">Your Cart</h4>
+                <Link
+                  to="/cart"
+                  className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 flex items-center gap-0.5"
+                >
+                  {cart?.items?.length || 0} items <ChevronRight size={14} />
+                </Link>
+              </div>
+
+              {/* Items List in Mini Cart */}
+              {!cart?.items || cart.items.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 dark:text-[#A7B3C5]">
+                  <ShoppingCart size={28} className="mx-auto mb-1.5 text-slate-300 dark:text-slate-600" />
+                  <p className="text-xs font-semibold">Your cart is currently empty</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                  {cart.items.map((item) => {
+                    const prod = typeof item.productId === 'object' ? item.productId : null;
+                    if (!prod) return null;
+
+                    return (
+                      <div
+                        key={prod._id}
+                        className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 dark:bg-[#111827] border border-slate-100 dark:border-[#2D3748]"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-white dark:bg-[#172033] p-1 border border-slate-200 dark:border-[#2D3748] shrink-0 flex items-center justify-center">
+                            {prod.imageUrl ? (
+                              <img
+                                src={prod.imageUrl}
+                                alt={prod.name}
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = PRODUCT_FALLBACK_IMAGE;
+                                }}
+                              />
+                            ) : (
+                              <Package size={14} className="text-slate-300 dark:text-slate-600" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <h6 className="text-xs font-bold text-slate-900 dark:text-[#F9FAFB] truncate leading-tight">
+                              {prod.name}
+                            </h6>
+                            <p className="text-[10px] text-slate-400 dark:text-[#A7B3C5]">
+                              ₹{prod.price}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Stepper */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleDecrement(prod._id, item.quantity)}
+                            className="w-5 h-5 rounded-md bg-white dark:bg-[#172033] border border-slate-200 dark:border-[#2D3748] hover:border-slate-300 dark:hover:border-slate-600 flex items-center justify-center font-bold text-[11px] text-slate-700 dark:text-[#F9FAFB]"
+                          >
+                            <Minus size={10} />
+                          </button>
+                          <span className="text-xs font-black text-slate-800 dark:text-[#F9FAFB] w-3 text-center">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleIncrement(prod._id, item.quantity, prod.stock)}
+                            className="w-5 h-5 rounded-md bg-white dark:bg-[#172033] border border-slate-200 dark:border-[#2D3748] hover:border-slate-300 dark:hover:border-slate-600 flex items-center justify-center font-bold text-[11px] text-slate-700 dark:text-[#F9FAFB]"
+                          >
+                            <Plus size={10} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Total & Checkout Button */}
+              {cart?.items && cart.items.length > 0 && (
+                <div className="pt-2 border-t border-slate-100 dark:border-[#2D3748] space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-slate-500 dark:text-[#A7B3C5]">Total Amount</span>
+                    <span className="text-sm font-black text-slate-900 dark:text-[#F9FAFB]">₹{cart.subtotal}</span>
+                  </div>
+
+                  <Link
+                    to="/cart"
+                    className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black text-xs text-center shadow-md shadow-sky-600/20 dark:shadow-emerald-950/40 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    View Cart <ArrowRight size={13} />
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </section>
-
-      {/* ──────────────────────────────────────────────────────────
-          8. WHY LOCALGROCERY? (TRUST PROPOSITIONS)
-         ────────────────────────────────────────────────────────── */}
-      <section className="py-12 bg-sky-900 text-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
-                <Truck className="h-6 w-6 text-yellow-300" />
-              </div>
-              <div>
-                <h4 className="font-extrabold text-sm sm:text-base">Fast 2-Hour Delivery</h4>
-                <p className="text-xs text-sky-200 mt-1">Get groceries delivered from shops in your immediate locality</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
-                <ShieldCheck className="h-6 w-6 text-emerald-400" />
-              </div>
-              <div>
-                <h4 className="font-extrabold text-sm sm:text-base">Verified Local Shops</h4>
-                <p className="text-xs text-sky-200 mt-1">Every store is verified & reviewed by our local community team</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
-                <CreditCard className="h-6 w-6 text-amber-300" />
-              </div>
-              <div>
-                <h4 className="font-extrabold text-sm sm:text-base">100% Cash on Delivery</h4>
-                <p className="text-xs text-sky-200 mt-1">Inspect your items at the door and pay directly with cash</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
-                <Clock className="h-6 w-6 text-sky-300" />
-              </div>
-              <div>
-                <h4 className="font-extrabold text-sm sm:text-base">Live Status Tracking</h4>
-                <p className="text-xs text-sky-200 mt-1">Real-time status updates from store preparation to delivery</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ──────────────────────────────────────────────────────────
-          9. FOOTER
-         ────────────────────────────────────────────────────────── */}
-      <footer className="bg-slate-950 text-slate-400 py-12 border-t border-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center text-white font-bold">
-                  <ShoppingBag size={16} />
-                </div>
-                <span className="font-black text-white text-lg tracking-tight">
-                  Local<span className="text-sky-500">Grocery</span>
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Empowering neighborhood grocery stores by connecting them directly with local households. Fresh, fast, and community-driven.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-3">Quick Links</h4>
-              <ul className="space-y-2 text-xs">
-                <li><Link to="/shops" className="hover:text-white transition-colors">Find Nearby Shops</Link></li>
-                <li><Link to="/orders" className="hover:text-white transition-colors">My Orders</Link></li>
-                <li><Link to="/register" className="hover:text-white transition-colors">Register as Shop Owner</Link></li>
-                <li><Link to="/login" className="hover:text-white transition-colors">Account Login</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-3">Top Categories</h4>
-              <ul className="space-y-2 text-xs">
-                <li><Link to="/shops" className="hover:text-white transition-colors">Fresh Vegetables & Fruits</Link></li>
-                <li><Link to="/shops" className="hover:text-white transition-colors">Dairy, Milk & Curd</Link></li>
-                <li><Link to="/shops" className="hover:text-white transition-colors">Rice, Dal & Grains</Link></li>
-                <li><Link to="/shops" className="hover:text-white transition-colors">Snacks & Beverages</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-3">Delivery Locations</h4>
-              <p className="text-xs text-slate-400 leading-relaxed mb-3">
-                Currently serving Pollachi, Coimbatore, Tiruppur, Udumalaipettai, and expanding across Tamil Nadu.
-              </p>
-              <span className="badge-blue text-[10px] font-bold">📍 Active: {city}</span>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-            <p>© {new Date().getFullYear()} LocalGrocery Booking System. All rights reserved.</p>
-            <p className="text-slate-500">Built with React, Node.js, Express, MongoDB Atlas & Tailwind CSS</p>
-          </div>
-        </div>
-      </footer>
+      </div>
     </MainLayout>
   );
 };

@@ -98,24 +98,24 @@ export const AdminCategories = () => {
       {/* Title & Add Button */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Category Taxonomy</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">Category Taxonomy</h1>
+          <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-0.5">
             Manage global grocery aisles, classifications, and system taxonomies ({categories.length} aisles)
           </p>
         </div>
 
         <button
           onClick={() => setShowModal(true)}
-          className="btn-primary py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-sky-600/20"
+          className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-colors"
         >
           <Plus size={16} /> Add Category
         </button>
       </div>
 
       {/* Search Bar */}
-      <div className="card p-3.5 border border-slate-100 flex items-center justify-between">
+      <div className="card p-3.5 border border-slate-100 dark:border-[#2D3748] dark:bg-[#172033] flex items-center justify-between">
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#A7B3C5]" size={15} />
           <input
             type="text"
             placeholder="Search categories..."
@@ -124,16 +124,16 @@ export const AdminCategories = () => {
             className="input-field pl-10 text-xs py-2 rounded-xl w-full"
           />
         </div>
-        <span className="text-xs font-bold text-slate-400 hidden sm:block">
+        <span className="text-xs font-bold text-slate-400 dark:text-[#A7B3C5] hidden sm:block">
           {filtered.length} categories active
         </span>
       </div>
 
       {/* Grid of Categories */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-slate-400">Loading categories...</div>
+        <div className="p-12 text-center text-xs text-slate-400 dark:text-[#A7B3C5]">Loading categories...</div>
       ) : filtered.length === 0 ? (
-        <div className="card p-12 text-center text-xs text-slate-400">
+        <div className="card p-12 text-center text-xs text-slate-400 dark:text-[#A7B3C5] dark:border-[#2D3748]">
           No categories found. Click "Add Category" above to create one.
         </div>
       ) : (
@@ -141,28 +141,28 @@ export const AdminCategories = () => {
           {filtered.map((cat) => (
             <div
               key={cat._id}
-              className="card p-4 border border-slate-100 hover:border-sky-200 hover:shadow-md transition-all flex items-start justify-between gap-3 group"
+              className="card p-4 border border-slate-100 dark:border-[#2D3748] dark:bg-[#172033] hover:border-emerald-300 dark:hover:border-emerald-500 hover:shadow-md transition-all flex items-start justify-between gap-3 group"
             >
               <div className="flex items-start gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 transition-transform">
+                <div className="h-12 w-12 rounded-2xl bg-slate-50 dark:bg-[#111827] border border-slate-100 dark:border-[#2D3748] flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 transition-transform">
                   {CATEGORY_EMOJIS[cat.name] || '🛒'}
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-sky-600 transition-colors">
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-[#F9FAFB] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     {cat.name}
                   </h3>
-                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  <p className="text-[11px] text-slate-400 dark:text-[#A7B3C5] font-mono mt-0.5">
                     /{cat.slug || cat.name.toLowerCase()}
                   </p>
                   {cat.description && (
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">{cat.description}</p>
+                    <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mt-1 line-clamp-2">{cat.description}</p>
                   )}
                 </div>
               </div>
 
               <button
                 onClick={() => handleDelete(cat._id, cat.name)}
-                className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors shrink-0"
+                className="text-slate-300 dark:text-slate-600 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1.5 rounded-lg transition-colors shrink-0 cursor-pointer"
                 title="Delete Category"
               >
                 <Trash2 size={15} />
@@ -175,17 +175,17 @@ export const AdminCategories = () => {
       {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-scale-in">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/70">
+          <div className="bg-white dark:bg-[#172033] rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 dark:border-[#2D3748] overflow-hidden animate-scale-in">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-[#2D3748] bg-slate-50/70 dark:bg-[#111827]">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-xl gradient-primary text-white flex items-center justify-center font-bold">
+                <div className="h-8 w-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
                   <Package size={16} />
                 </div>
-                <h3 className="font-extrabold text-slate-900 text-sm">Add New Grocery Category</h3>
+                <h3 className="font-extrabold text-slate-900 dark:text-[#F9FAFB] text-sm">Add New Grocery Category</h3>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -193,44 +193,44 @@ export const AdminCategories = () => {
 
             <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-[#F9FAFB] mb-1">
                   Category Name *
                 </label>
                 <input
                   {...register('name')}
                   type="text"
                   placeholder="e.g. Organic Greens, Bakery, Dairy..."
-                  className="input-field text-xs py-2.5 rounded-xl"
+                  className="input-field text-xs py-2.5 rounded-xl w-full"
                 />
                 {errors.name && (
-                  <p className="text-xs text-rose-600 mt-1">⚠ {errors.name.message}</p>
+                  <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">⚠ {errors.name.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-[#F9FAFB] mb-1">
                   Description (Optional)
                 </label>
                 <textarea
                   {...register('description')}
                   rows={3}
                   placeholder="Short description of items included in this aisle..."
-                  className="input-field text-xs py-2 rounded-xl resize-none"
+                  className="input-field text-xs py-2 rounded-xl resize-none w-full"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-[#2D3748]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="btn-secondary py-2 px-4 rounded-xl text-xs font-bold"
+                  className="btn-secondary py-2 px-4 rounded-xl text-xs font-bold dark:bg-[#111827] dark:border-[#2D3748] dark:text-[#A7B3C5] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="btn-primary py-2 px-5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                  className="py-2 px-5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 cursor-pointer shadow-md shadow-emerald-600/20"
                 >
                   {saving && <Loader2 size={13} className="animate-spin" />}
                   <span>{saving ? 'Creating...' : 'Save Category'}</span>

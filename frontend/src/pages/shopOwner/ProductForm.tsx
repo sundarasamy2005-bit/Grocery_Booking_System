@@ -120,15 +120,15 @@ const ProductForm = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/shop/products')} className="p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50">
+        <button onClick={() => navigate('/shop/products')} className="p-2 bg-white dark:bg-[#172033] border border-gray-200 dark:border-[#2D3748] text-gray-700 dark:text-[#F9FAFB] rounded-xl hover:bg-gray-50 dark:hover:bg-[#111827] cursor-pointer">
           <ArrowLeft size={16} />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">{isEditMode ? 'Edit Product' : 'Add New Product'}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-[#F9FAFB]">{isEditMode ? 'Edit Product' : 'Add New Product'}</h1>
       </div>
 
-      <div className="bg-white shadow rounded-lg border border-gray-200 p-6">
+      <div className="bg-white dark:bg-[#172033] shadow rounded-2xl border border-gray-200 dark:border-[#2D3748] p-6">
         {formError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-start gap-2 animate-scale-in">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl text-sm text-red-700 dark:text-red-300 flex items-start gap-2 animate-scale-in">
             <span className="shrink-0 text-red-500 font-bold">⚠️</span>
             <div>
               <p className="font-bold">Error saving product</p>
@@ -141,76 +141,76 @@ const ProductForm = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Product Name</label>
-              <input {...register('name')} type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
-              {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
+              <label className="block text-sm font-medium text-gray-700 dark:text-[#F9FAFB]">Product Name</label>
+              <input {...register('name')} type="text" className="mt-1 block w-full border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl shadow-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm" />
+              {errors.name && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Category</label>
-              <select {...register('categoryId')} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white">
+              <label className="block text-sm font-medium text-gray-700 dark:text-[#F9FAFB]">Category</label>
+              <select {...register('categoryId')} className="mt-1 block w-full border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl shadow-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm">
                 <option value="">Select a category</option>
                 {categories.map(cat => (
                   <option key={cat._id} value={cat._id}>{cat.name}</option>
                 ))}
               </select>
-              {errors.categoryId && <p className="mt-1 text-xs text-red-600">{errors.categoryId.message}</p>}
+              {errors.categoryId && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.categoryId.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Unit (e.g. kg, piece, 500g)</label>
-              <input {...register('unit')} type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
-              {errors.unit && <p className="mt-1 text-xs text-red-600">{errors.unit.message}</p>}
+              <label className="block text-sm font-medium text-gray-700 dark:text-[#F9FAFB]">Unit (e.g. kg, piece, 500g)</label>
+              <input {...register('unit')} type="text" className="mt-1 block w-full border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl shadow-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm" />
+              {errors.unit && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.unit.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Price (₹)</label>
-              <input {...register('price')} type="number" step="0.01" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
-              {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price.message}</p>}
+              <label className="block text-sm font-medium text-gray-700 dark:text-[#F9FAFB]">Price (₹)</label>
+              <input {...register('price')} type="number" step="0.01" className="mt-1 block w-full border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl shadow-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm" />
+              {errors.price && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.price.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Stock Quantity</label>
-              <input {...register('stock')} type="number" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
-              {errors.stock && <p className="mt-1 text-xs text-red-600">{errors.stock.message}</p>}
+              <label className="block text-sm font-medium text-gray-700 dark:text-[#F9FAFB]">Stock Quantity</label>
+              <input {...register('stock')} type="number" className="mt-1 block w-full border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl shadow-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm" />
+              {errors.stock && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.stock.message}</p>}
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Description</label>
-              <textarea {...register('description')} rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-[#F9FAFB]">Description</label>
+              <textarea {...register('description')} rows={3} className="mt-1 block w-full border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl shadow-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm" />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-[#F9FAFB] mb-2">Product Image</label>
               <div className="flex items-center gap-6">
-                <div className="h-32 w-32 bg-gray-100 rounded-md border border-gray-300 overflow-hidden flex items-center justify-center flex-shrink-0">
+                <div className="h-32 w-32 bg-gray-100 dark:bg-[#111827] rounded-xl border border-gray-300 dark:border-[#2D3748] overflow-hidden flex items-center justify-center flex-shrink-0">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover dark:mix-blend-normal" />
                   ) : (
-                    <span className="text-gray-400 text-xs">No image</span>
+                    <span className="text-gray-400 dark:text-[#A7B3C5] text-xs">No image</span>
                   )}
                 </div>
                 <div className="flex-1">
-                  <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                  <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 dark:border-[#2D3748] shadow-xs text-sm font-medium rounded-xl text-gray-700 dark:text-[#F9FAFB] bg-white dark:bg-[#111827] hover:bg-gray-50 dark:hover:bg-[#172033] focus-within:ring-2 focus-within:ring-emerald-500">
                     <Upload size={16} className="mr-2" />
                     Upload Image
                     <input type="file" className="sr-only" accept="image/*" onChange={handleImageChange} />
                   </label>
-                  <p className="mt-2 text-xs text-gray-500">JPG, PNG or WEBP up to 5MB.</p>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-[#A7B3C5]">JPG, PNG or WEBP up to 5MB.</p>
                 </div>
               </div>
             </div>
 
             <div className="md:col-span-2">
-              <label className="flex items-center">
-                <input type="checkbox" {...register('isAvailable')} className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
-                <span className="ml-2 block text-sm text-gray-900">Product is active and available for purchase</span>
+              <label className="flex items-center cursor-pointer">
+                <input type="checkbox" {...register('isAvailable')} className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-[#2D3748] rounded" />
+                <span className="ml-2 block text-sm text-gray-900 dark:text-[#F9FAFB]">Product is active and available for purchase</span>
               </label>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-gray-200 flex justify-end">
-            <button type="submit" disabled={loading} className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50">
+          <div className="pt-4 border-t border-gray-200 dark:border-[#2D3748] flex justify-end">
+            <button type="submit" disabled={loading} className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-xl shadow-xs text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 cursor-pointer">
               {loading ? <><Loader2 className="animate-spin mr-2 h-4 w-4" /> Saving...</> : 'Save Product'}
             </button>
           </div>

@@ -16,9 +16,9 @@ export const ToastContainer = () => {
         };
 
         const bgStyles = {
-          success: 'bg-white border-emerald-100 text-slate-800 shadow-emerald-500/10',
-          error: 'bg-white border-red-100 text-slate-800 shadow-red-500/10',
-          info: 'bg-white border-sky-100 text-slate-800 shadow-sky-500/10',
+          success: 'bg-white dark:bg-[#172033] border-emerald-200 dark:border-emerald-800/60 text-slate-900 dark:text-[#F9FAFB] shadow-emerald-500/10',
+          error: 'bg-white dark:bg-[#172033] border-red-200 dark:border-red-800/60 text-slate-900 dark:text-[#F9FAFB] shadow-red-500/10',
+          info: 'bg-white dark:bg-[#172033] border-slate-200 dark:border-[#2D3748] text-slate-900 dark:text-[#F9FAFB] shadow-slate-500/10',
         };
 
         return (

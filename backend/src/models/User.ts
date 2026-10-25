@@ -39,6 +39,16 @@ const userSchema = new mongoose.Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    favorites: [
+      {
+        type: String,
+        ref: 'Product',
+      },
+    ],
+    notificationsEnabled: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

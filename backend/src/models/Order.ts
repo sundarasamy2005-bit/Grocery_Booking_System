@@ -14,8 +14,13 @@ const orderItemSchema = new mongoose.Schema<IOrderItem>(
 
 const deliveryAddressSchema = new mongoose.Schema<IDeliveryAddress>(
   {
-    fullName: { type: String, required: true },
-    phone: { type: String, required: true },
+    fullName: { type: String, default: 'Customer' },
+    phone: { type: String, default: 'N/A' },
+    label: { type: String, default: 'Home' },
+    houseStreet: { type: String },
+    areaCity: { type: String },
+    pinCode: { type: String },
+    landmark: { type: String },
     addressLine1: { type: String, required: true },
     addressLine2: { type: String },
     city: { type: String, required: true },

@@ -19,10 +19,19 @@ from services.report_service import ReportService
 
 # Background Scheduler Thread
 def run_scheduler():
+    def safe_email_job():
+        try:
+            ReportService.send_daily_report_email()
+        except Exception as e:
+            print(f"[AI REPORT] Exception during daily report job: {e}")
+
     # Schedule automated daily report at 23:00 (11 PM)
-    schedule.every().day.at("23:00").do(ReportService.send_daily_report_email)
+    schedule.every().day.at("23:00").do(safe_email_job)
     while True:
-        schedule.run_pending()
+        try:
+            schedule.run_pending()
+        except Exception as sched_err:
+            print(f"[AI SCHEDULER] Exception in scheduler loop: {sched_err}")
         time.sleep(60)
 
 @asynccontextmanager

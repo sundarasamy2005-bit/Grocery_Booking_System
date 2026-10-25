@@ -24,6 +24,8 @@ export interface IUser extends Document {
   profileImage?: string;
   role: UserRole;
   isActive: boolean;
+  favorites?: string[];
+  notificationsEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,14 +72,23 @@ export interface ICategory extends Document {
 export interface IProduct extends Document {
   shopId: string;
   categoryId: string;
+  sku?: string;
   name: string;
   slug: string;
   description?: string;
   price: number;
+  originalPrice?: number;
+  discountPercentage?: number;
   stock: number;
   unit: string;
   imageUrl?: string;
+  images?: string[];
   cloudinaryPublicId?: string;
+  brand?: string;
+  freshnessInfo?: string;
+  averageRating?: number;
+  totalReviews?: number;
+  unitsSold?: number;
   isAvailable: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -100,6 +111,11 @@ export interface IAddress extends Document {
   userId: string;
   fullName: string;
   phone: string;
+  houseStreet: string;
+  areaCity: string;
+  pinCode: string;
+  landmark?: string;
+  label: 'Home' | 'Work' | 'Other';
   addressLine1: string;
   addressLine2?: string;
   city: string;
@@ -123,6 +139,11 @@ export interface IOrderItem {
 export interface IDeliveryAddress {
   fullName: string;
   phone: string;
+  houseStreet?: string;
+  areaCity?: string;
+  pinCode?: string;
+  landmark?: string;
+  label?: string;
   addressLine1: string;
   addressLine2?: string;
   city: string;
@@ -153,6 +174,26 @@ export interface IOrder extends Document {
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
   customerNote?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IReviewPhoto {
+  url: string;
+  publicId?: string;
+}
+
+export interface IReview extends Document {
+  productId: string;
+  userId: string;
+  orderId?: string;
+  rating: number;
+  title?: string;
+  comment: string;
+  photos: IReviewPhoto[];
+  isVerifiedPurchase: boolean;
+  helpfulVotes: number;
+  helpfulUsers: string[];
   createdAt: Date;
   updatedAt: Date;
 }

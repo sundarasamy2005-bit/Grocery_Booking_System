@@ -9,6 +9,8 @@ export interface User {
   profileImage?: string;
   role: Role;
   isActive: boolean;
+  favorites?: string[];
+  notificationsEnabled?: boolean;
   createdAt: string;
 }
 
@@ -54,10 +56,19 @@ export interface Product {
   _id: string;
   shopId: string | Shop;
   categoryId: string | Category;
+  sku?: string;
   name: string;
   slug: string;
   description?: string;
   price: number;
+  originalPrice?: number;
+  discountPercentage?: number;
+  images?: string[];
+  brand?: string;
+  freshnessInfo?: string;
+  averageRating?: number;
+  totalReviews?: number;
+  unitsSold?: number;
   stock: number;
   unit: string;
   imageUrl?: string;
@@ -89,6 +100,44 @@ export interface DeliveryLocation {
   address: string;
   latitude: number;
   longitude: number;
+}
+
+export type AddressLabel = 'Home' | 'Work' | 'Other';
+
+export interface Address {
+  _id: string;
+  userId: string;
+  label: AddressLabel;
+  houseStreet: string;
+  areaCity: string;
+  pinCode: string;
+  landmark?: string;
+  fullName?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AddressFormData {
+  label: AddressLabel;
+  houseStreet: string;
+  areaCity: string;
+  pinCode: string;
+  landmark?: string;
+  fullName?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  isDefault?: boolean;
 }
 
 export interface Order {
@@ -128,4 +177,67 @@ export interface ApiResponse<T> {
     total: number;
     totalPages: number;
   };
+}
+
+export interface ReviewPhoto {
+  url: string;
+  publicId?: string;
+}
+
+export interface ReviewAuthor {
+  _id: string;
+  name: string;
+  profileImage?: string;
+}
+
+export interface Review {
+  _id: string;
+  productId: string;
+  userId: ReviewAuthor;
+  orderId?: string;
+  rating: number;
+  title?: string;
+  comment: string;
+  photos: ReviewPhoto[];
+  isVerifiedPurchase: boolean;
+  helpfulVotes: number;
+  helpfulUsers: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  breakdown: Record<number, { count: number; percentage: number }>;
+  photosCount: number;
+  customerPhotos: Array<{
+    url: string;
+    rating: number;
+    title?: string;
+  }>;
+  purchaseStats: {
+    distinctBuyers: number;
+    totalUnitsSold: number;
+  };
+}
+
+export interface UserReviewState {
+  hasReviewed: boolean;
+  userReview: Review | null;
+  hasPurchased: boolean;
+  isDelivered: boolean;
+}
+
+export interface ProductReviewsResponse {
+  success: boolean;
+  data: Review[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  stats: ReviewStats;
+  userState: UserReviewState;
 }

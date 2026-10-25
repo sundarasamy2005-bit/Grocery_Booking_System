@@ -311,7 +311,7 @@ export default function ShopLocationMap({
                 if (searchResults.length > 0) setSearchOpen(true);
               }}
               placeholder="Search area, landmark or street (e.g., Pollachi Bus Stand, Kovai Road)..."
-              className="w-full pl-10 pr-20 py-2.5 bg-white border border-gray-300 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-xs"
+              className="w-full pl-10 pr-20 py-2.5 bg-white dark:bg-[#111827] border border-gray-300 dark:border-[#2D3748] text-gray-900 dark:text-[#F9FAFB] rounded-xl text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-xs"
             />
             <div className="absolute inset-y-0 right-1 flex items-center gap-1 pr-1.5">
               {searchQuery && (
@@ -322,7 +322,7 @@ export default function ShopLocationMap({
                     setSearchResults([]);
                     setSearchOpen(false);
                   }}
-                  className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   <X size={14} />
                 </button>
@@ -339,33 +339,33 @@ export default function ShopLocationMap({
 
           {/* Search Results Dropdown */}
           {searchOpen && searchResults.length > 0 && (
-            <div className="absolute z-1000 mt-1.5 w-full bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden max-h-72 overflow-y-auto">
-              <div className="p-2 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center justify-between">
+            <div className="absolute z-1000 mt-1.5 w-full bg-white dark:bg-[#172033] rounded-2xl shadow-xl border border-gray-200 dark:border-[#2D3748] overflow-hidden max-h-72 overflow-y-auto">
+              <div className="p-2 bg-gray-50 dark:bg-[#111827] border-b border-gray-100 dark:border-[#2D3748] text-[11px] font-bold text-gray-500 dark:text-[#A7B3C5] uppercase tracking-wider flex items-center justify-between">
                 <span>Matching Locations ({searchResults.length})</span>
                 <button
                   type="button"
                   onClick={() => setSearchOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
                 >
                   <X size={12} />
                 </button>
               </div>
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-[#2D3748]">
                 {searchResults.map((result) => (
                   <button
                     key={result.placeId}
                     type="button"
                     onClick={() => handleSelectSearchResult(result)}
-                    className="w-full text-left p-3 hover:bg-emerald-50/70 transition-colors flex items-start gap-2.5 cursor-pointer group"
+                    className="w-full text-left p-3 hover:bg-emerald-50/70 dark:hover:bg-[#111827] transition-colors flex items-start gap-2.5 cursor-pointer group"
                   >
-                    <div className="p-1.5 rounded-lg bg-gray-100 text-gray-500 group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors mt-0.5">
+                    <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-950 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors mt-0.5">
                       <MapPin size={14} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-gray-900 truncate group-hover:text-emerald-700">
+                      <p className="text-xs font-bold text-gray-900 dark:text-[#F9FAFB] truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
                         {result.name || result.displayName.split(',')[0]}
                       </p>
-                      <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5 leading-tight">
+                      <p className="text-[11px] text-gray-500 dark:text-[#A7B3C5] line-clamp-1 mt-0.5 leading-tight">
                         {result.displayName}
                       </p>
                     </div>
@@ -398,7 +398,7 @@ export default function ShopLocationMap({
       </div>
 
       {/* Interactive Map Canvas */}
-      <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-slate-100">
+      <div className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-[#2D3748] shadow-sm bg-slate-100 dark:bg-[#111827]">
         <MapContainer
           center={position}
           zoom={15}
@@ -443,10 +443,10 @@ export default function ShopLocationMap({
         </MapContainer>
 
         {/* Interactive Map HUD Overlay */}
-        <div className="absolute top-3 right-3 z-400 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200/90 shadow-md flex items-center gap-2 text-xs">
+        <div className="absolute top-3 right-3 z-400 bg-white/95 dark:bg-[#172033]/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200/90 dark:border-[#2D3748] shadow-md flex items-center gap-2 text-xs">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="font-bold text-gray-800">Shop Location Pin</span>
-          <span className="text-gray-400 font-mono text-[11px]">({deliveryRadiusKm}km service radius)</span>
+          <span className="font-bold text-gray-800 dark:text-[#F9FAFB]">Shop Location Pin</span>
+          <span className="text-gray-400 dark:text-[#A7B3C5] font-mono text-[11px]">({deliveryRadiusKm}km service radius)</span>
         </div>
 
         {/* Drag Hint at bottom */}
@@ -460,26 +460,26 @@ export default function ShopLocationMap({
             href={`https://www.google.com/maps/search/?api=1&query=${safeLat},${safeLng}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white/95 backdrop-blur-md hover:bg-white text-gray-800 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-md pointer-events-auto flex items-center gap-1.5 border border-gray-200 transition-colors"
+            className="bg-white/95 dark:bg-[#172033]/95 backdrop-blur-md hover:bg-white dark:hover:bg-[#172033] text-gray-800 dark:text-[#F9FAFB] text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-md pointer-events-auto flex items-center gap-1.5 border border-gray-200 dark:border-[#2D3748] transition-colors"
           >
             <span>Google Maps</span>
-            <ExternalLink size={12} className="text-gray-500" />
+            <ExternalLink size={12} className="text-gray-500 dark:text-[#A7B3C5]" />
           </a>
         </div>
       </div>
 
       {/* Geocoding Status & Auto-Fill Banner */}
-      <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 space-y-2">
+      <div className="p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800/40 bg-emerald-50/70 dark:bg-emerald-950/30 space-y-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-2xs">
               <MapPin size={16} />
             </div>
             <div>
-              <p className="text-xs font-bold text-emerald-950">
+              <p className="text-xs font-bold text-emerald-950 dark:text-emerald-200">
                 Real-World Coordinates & Geocoded Address
               </p>
-              <div className="flex items-center gap-3 text-[11px] font-mono text-emerald-800 mt-0.5">
+              <div className="flex items-center gap-3 text-[11px] font-mono text-emerald-800 dark:text-emerald-300 mt-0.5">
                 <span>Lat: {safeLat.toFixed(6)}</span>
                 <span>•</span>
                 <span>Lng: {safeLng.toFixed(6)}</span>
@@ -494,7 +494,7 @@ export default function ShopLocationMap({
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
                 syncApplied
                   ? 'bg-emerald-600 text-white'
-                  : 'bg-white text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                  : 'bg-white dark:bg-[#111827] text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950 border border-emerald-200 dark:border-emerald-800'
               }`}
             >
               {syncApplied ? (
@@ -512,12 +512,12 @@ export default function ShopLocationMap({
         </div>
 
         {reverseLoading ? (
-          <div className="flex items-center gap-2 text-xs text-emerald-700 font-medium py-1">
-            <Loader2 size={13} className="animate-spin text-emerald-600" />
+          <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 font-medium py-1">
+            <Loader2 size={13} className="animate-spin text-emerald-600 dark:text-emerald-400" />
             <span>Fetching real-world address from OpenStreetMap...</span>
           </div>
         ) : detectedAddress?.displayName ? (
-          <p className="text-xs text-emerald-900/90 leading-relaxed font-medium bg-white/70 p-2.5 rounded-xl border border-emerald-200/60">
+          <p className="text-xs text-emerald-900/90 dark:text-emerald-200 leading-relaxed font-medium bg-white/70 dark:bg-[#111827]/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
             {detectedAddress.displayName}
           </p>
         ) : null}

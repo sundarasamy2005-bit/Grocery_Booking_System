@@ -133,11 +133,11 @@ export const ShopSettings = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Settings className="h-6 w-6 text-primary-600" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-[#F9FAFB] flex items-center gap-2">
+            <Settings className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             Store Management Settings
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-500 dark:text-[#A7B3C5] mt-0.5">
             Manage your operating schedule, store vacation mode, storefront announcements, and delivery pricing rules
           </p>
         </div>
@@ -145,15 +145,15 @@ export const ShopSettings = () => {
         <div className="flex items-center gap-2">
           <Link
             to="/shop/automation"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-xl shadow-2xs transition-all"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white dark:bg-[#172033] border border-gray-200 dark:border-[#2D3748] hover:bg-gray-50 dark:hover:bg-[#111827] text-gray-700 dark:text-[#F9FAFB] text-xs font-bold rounded-xl shadow-2xs transition-all"
           >
-            <Cpu className="h-4 w-4 text-indigo-600" />
+            <Cpu className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             <span>Automation Center</span>
           </Link>
           <button
             onClick={handleSaveAllSettings}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             {saving ? 'Saving Changes...' : 'Save Settings'}
@@ -166,41 +166,41 @@ export const ShopSettings = () => {
         <div
           className={`p-4 rounded-2xl border flex items-center gap-3 transition-all ${
             feedback.type === 'success'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              : 'bg-red-50 border-red-200 text-red-800'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+              : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-red-800 dark:text-red-200'
           }`}
         >
           {feedback.type === 'success' ? (
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           ) : (
-            <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
           )}
           <span className="text-xs sm:text-sm font-semibold">{feedback.message}</span>
         </div>
       )}
 
       {/* ─── SECTION 1: Store Operating Schedule & Customer Announcement ─── */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-xs space-y-6">
-        <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+      <div className="bg-white dark:bg-[#172033] rounded-3xl p-6 border border-gray-200 dark:border-[#2D3748] shadow-xs space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-[#2D3748]">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-2xl">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl">
               <Store className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900">Operating Hours & Store Status</h2>
-              <p className="text-xs text-gray-500">Control when customers can view and place orders from your store</p>
+              <h2 className="text-base font-bold text-gray-900 dark:text-[#F9FAFB]">Operating Hours & Store Status</h2>
+              <p className="text-xs text-gray-500 dark:text-[#A7B3C5]">Control when customers can view and place orders from your store</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className={`text-xs font-bold px-2.5 py-1 rounded-xl ${isOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+            <span className={`text-xs font-bold px-2.5 py-1 rounded-xl ${isOpen ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' : 'bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300'}`}>
               {isOpen ? 'Store Active (Open)' : 'Vacation Mode (Closed)'}
             </span>
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                isOpen ? 'bg-emerald-600' : 'bg-gray-300'
+                isOpen ? 'bg-emerald-600' : 'bg-gray-300 dark:bg-slate-700'
               }`}
             >
               <span
@@ -215,33 +215,33 @@ export const ShopSettings = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Operating Hours */}
           <div className="space-y-4">
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-gray-700 dark:text-[#F9FAFB] uppercase tracking-wider">
               Daily Business Hours
             </label>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-xs text-gray-500 block mb-1">Opening Time</span>
+                <span className="text-xs text-gray-500 dark:text-[#A7B3C5] block mb-1">Opening Time</span>
                 <input
                   type="time"
                   value={openingTime}
                   onChange={(e) => setOpeningTime(e.target.value)}
-                  className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                  className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
               <div>
-                <span className="text-xs text-gray-500 block mb-1">Closing Time</span>
+                <span className="text-xs text-gray-500 dark:text-[#A7B3C5] block mb-1">Closing Time</span>
                 <input
                   type="time"
                   value={closingTime}
                   onChange={(e) => setClosingTime(e.target.value)}
-                  className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                  className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Operating Days pills */}
             <div>
-              <span className="text-xs text-gray-500 block mb-2">Operating Days</span>
+              <span className="text-xs text-gray-500 dark:text-[#A7B3C5] block mb-2">Operating Days</span>
               <div className="flex flex-wrap gap-2">
                 {WEEK_DAYS.map((day) => {
                   const active = operatingDays.includes(day);
@@ -252,8 +252,8 @@ export const ShopSettings = () => {
                       onClick={() => handleToggleDay(day)}
                       className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                         active
-                          ? 'bg-primary-600 text-white shadow-2xs'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-emerald-600 text-white shadow-2xs'
+                          : 'bg-gray-100 dark:bg-[#111827] text-gray-600 dark:text-[#A7B3C5] hover:bg-gray-200 dark:hover:bg-[#172033]'
                       }`}
                     >
                       {day}
@@ -266,7 +266,7 @@ export const ShopSettings = () => {
 
           {/* Customer Announcement Banner */}
           <div className="space-y-2">
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-gray-700 dark:text-[#F9FAFB] uppercase tracking-wider">
               Storefront Announcement Banner (Visible to Customers)
             </label>
             <textarea
@@ -274,9 +274,9 @@ export const ShopSettings = () => {
               value={announcement}
               onChange={(e) => setAnnouncement(e.target.value)}
               placeholder="e.g., Today's Special: 10% off fresh farm vegetables! Free delivery on orders above ₹499."
-              className="w-full p-3 text-xs sm:text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full p-3 text-xs sm:text-sm border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] placeholder:text-gray-400 dark:placeholder:text-gray-500 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-gray-500 dark:text-[#A7B3C5]">
               This message is highlighted on your shop profile page for all local customers.
             </p>
           </div>
@@ -284,76 +284,76 @@ export const ShopSettings = () => {
       </div>
 
       {/* ─── SECTION 2: Order, Delivery & Pickup Rules ─── */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-xs space-y-6">
-        <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-          <div className="p-2.5 bg-amber-50 text-amber-600 rounded-2xl">
+      <div className="bg-white dark:bg-[#172033] rounded-3xl p-6 border border-gray-200 dark:border-[#2D3748] shadow-xs space-y-6">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 dark:border-[#2D3748]">
+          <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-2xl">
             <Truck className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-gray-900">Delivery, Pickup & Order Thresholds</h2>
-            <p className="text-xs text-gray-500">Manage minimum checkout thresholds and delivery charges</p>
+            <h2 className="text-base font-bold text-gray-900 dark:text-[#F9FAFB]">Delivery, Pickup & Order Thresholds</h2>
+            <p className="text-xs text-gray-500 dark:text-[#A7B3C5]">Manage minimum checkout thresholds and delivery charges</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Minimum Order Value (₹)</label>
+            <label className="block text-xs font-bold text-gray-700 dark:text-[#F9FAFB] mb-1">Minimum Order Value (₹)</label>
             <input
               type="number"
               min={0}
               value={minimumOrderAmount}
               onChange={(e) => setMinimumOrderAmount(Number(e.target.value))}
-              className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
-            <span className="text-[10px] text-gray-500">Minimum basket value required</span>
+            <span className="text-[10px] text-gray-500 dark:text-[#A7B3C5]">Minimum basket value required</span>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Standard Delivery Fee (₹)</label>
+            <label className="block text-xs font-bold text-gray-700 dark:text-[#F9FAFB] mb-1">Standard Delivery Fee (₹)</label>
             <input
               type="number"
               min={0}
               value={deliveryFee}
               onChange={(e) => setDeliveryFee(Number(e.target.value))}
-              className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
-            <span className="text-[10px] text-gray-500">Standard charge for home delivery</span>
+            <span className="text-[10px] text-gray-500 dark:text-[#A7B3C5]">Standard charge for home delivery</span>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Free Delivery Above (₹)</label>
+            <label className="block text-xs font-bold text-gray-700 dark:text-[#F9FAFB] mb-1">Free Delivery Above (₹)</label>
             <input
               type="number"
               min={0}
               value={freeDeliveryThreshold}
               onChange={(e) => setFreeDeliveryThreshold(Number(e.target.value))}
-              className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
-            <span className="text-[10px] text-gray-500">Orders qualifying for free delivery</span>
+            <span className="text-[10px] text-gray-500 dark:text-[#A7B3C5]">Orders qualifying for free delivery</span>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Est. Delivery Time (Mins)</label>
+            <label className="block text-xs font-bold text-gray-700 dark:text-[#F9FAFB] mb-1">Est. Delivery Time (Mins)</label>
             <input
               type="number"
               min={10}
               value={estimatedDeliveryTime}
               onChange={(e) => setEstimatedDeliveryTime(Number(e.target.value))}
-              className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full text-xs sm:text-sm p-2.5 border border-gray-300 dark:border-[#2D3748] bg-white dark:bg-[#111827] text-gray-900 dark:text-[#F9FAFB] rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
-            <span className="text-[10px] text-gray-500">Displayed to nearby shoppers</span>
+            <span className="text-[10px] text-gray-500 dark:text-[#A7B3C5]">Displayed to nearby shoppers</span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-gray-100">
+        <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-gray-100 dark:border-[#2D3748]">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={deliveryAvailable}
               onChange={(e) => setDeliveryAvailable(e.target.checked)}
-              className="h-4 w-4 text-primary-600 rounded cursor-pointer"
+              className="h-4 w-4 text-emerald-600 rounded cursor-pointer"
             />
-            <span className="text-xs font-bold text-gray-800">Home Delivery Available</span>
+            <span className="text-xs font-bold text-gray-800 dark:text-[#F9FAFB]">Home Delivery Available</span>
           </label>
 
           <label className="flex items-center gap-2 cursor-pointer">
@@ -361,19 +361,19 @@ export const ShopSettings = () => {
               type="checkbox"
               checked={pickupAvailable}
               onChange={(e) => setPickupAvailable(e.target.checked)}
-              className="h-4 w-4 text-primary-600 rounded cursor-pointer"
+              className="h-4 w-4 text-emerald-600 rounded cursor-pointer"
             />
-            <span className="text-xs font-bold text-gray-800">Store Counter Pickup Available</span>
+            <span className="text-xs font-bold text-gray-800 dark:text-[#F9FAFB]">Store Counter Pickup Available</span>
           </label>
         </div>
       </div>
 
       {/* Save Button Bottom */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-[#2D3748]">
         <button
           onClick={handleSaveAllSettings}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
           {saving ? 'Saving Preferences...' : 'Save Settings'}
