@@ -32,10 +32,22 @@ export const cartController = {
   async addToCart(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user!._id.toString();
-      const { productId, quantity = 1, forceClear = false } = req.body as {
+      const {
+        productId,
+        quantity = 1,
+        forceClear = false,
+        variantId,
+        variantLabel,
+        variantPrice,
+        variantOriginalPrice,
+      } = req.body as {
         productId: string;
         quantity: number;
         forceClear?: boolean;
+        variantId?: string;
+        variantLabel?: string;
+        variantPrice?: number;
+        variantOriginalPrice?: number;
       };
 
       // Validate product
@@ -65,14 +77,25 @@ export const cartController = {
 
       let cart = await Cart.findOne({ userId });
 
+      const cleanVariantId = variantId || '';
+      const cleanVariantLabel = variantLabel || '';
+      const effectiveUnitPrice = variantPrice && variantPrice > 0 ? variantPrice : product.price;
+
       // If forceClear requested, or no cart exists, or cart is currently empty:
       if (forceClear || !cart || cart.items.length === 0) {
         if (!cart) {
           cart = new Cart({ userId });
         }
         cart.shopId = product.shopId.toString();
-        cart.items = [{ productId, quantity }];
-        cart.subtotal = product.price * quantity;
+        cart.items = [{
+          productId,
+          quantity,
+          variantId: cleanVariantId,
+          variantLabel: cleanVariantLabel,
+          variantPrice: effectiveUnitPrice,
+          variantOriginalPrice: variantOriginalPrice || undefined,
+        }];
+        cart.subtotal = effectiveUnitPrice * quantity;
       } else if (cart.shopId && cart.shopId.toString() !== product.shopId.toString()) {
         // Different shop with active items
         const currentShop = await Shop.findById(cart.shopId).select('shopName').lean();
@@ -90,7 +113,7 @@ export const cartController = {
         // Same shop — update or add item
         cart.shopId = product.shopId.toString();
         const existingItem = cart.items.find(
-          (item) => item.productId.toString() === productId
+          (item) => item.productId.toString() === productId && (item.variantId || '') === cleanVariantId
         );
         if (existingItem) {
           const newQty = existingItem.quantity + quantity;
@@ -102,8 +125,16 @@ export const cartController = {
             return;
           }
           existingItem.quantity = newQty;
+          if (effectiveUnitPrice) existingItem.variantPrice = effectiveUnitPrice;
         } else {
-          cart.items.push({ productId, quantity });
+          cart.items.push({
+            productId,
+            quantity,
+            variantId: cleanVariantId,
+            variantLabel: cleanVariantLabel,
+            variantPrice: effectiveUnitPrice,
+            variantOriginalPrice: variantOriginalPrice || undefined,
+          });
         }
 
         // Recalculate subtotal
@@ -111,7 +142,7 @@ export const cartController = {
         const products = await Product.find({ _id: { $in: productIds } }).lean();
         const priceMap = Object.fromEntries(products.map((p) => [p._id.toString(), p.price]));
         cart.subtotal = cart.items.reduce(
-          (sum, item) => sum + (priceMap[item.productId.toString()] || 0) * item.quantity,
+          (sum, item) => sum + (item.variantPrice ?? priceMap[item.productId.toString()] ?? 0) * item.quantity,
           0
         );
       }
@@ -138,7 +169,7 @@ export const cartController = {
     try {
       const userId = req.user!._id.toString();
       const { productId } = req.params;
-      const { quantity } = req.body as { quantity: number };
+      const { quantity, variantId } = req.body as { quantity: number; variantId?: string };
 
       if (!quantity || quantity < 1) {
         res.status(400).json({ success: false, message: 'Invalid quantity' });
@@ -164,7 +195,8 @@ export const cartController = {
         return;
       }
 
-      const item = cart.items.find((i) => i.productId.toString() === productId);
+      const cleanVariantId = variantId || '';
+      const item = cart.items.find((i) => i.productId.toString() === productId && (variantId === undefined || (i.variantId || '') === cleanVariantId));
       if (!item) {
         res.status(404).json({ success: false, message: 'Item not in cart' });
         return;
@@ -177,7 +209,7 @@ export const cartController = {
       const products = await Product.find({ _id: { $in: productIds } }).lean();
       const priceMap = Object.fromEntries(products.map((p) => [p._id.toString(), p.price]));
       cart.subtotal = cart.items.reduce(
-        (sum, i) => sum + (priceMap[i.productId.toString()] || 0) * i.quantity,
+        (sum, i) => sum + (i.variantPrice ?? priceMap[i.productId.toString()] ?? 0) * i.quantity,
         0
       );
 
@@ -203,6 +235,8 @@ export const cartController = {
     try {
       const userId = req.user!._id.toString();
       const { productId } = req.params;
+      const variantId = req.query.variantId as string | undefined;
+      const cleanVariantId = variantId || '';
 
       const cart = await Cart.findOne({ userId });
       if (!cart) {
@@ -210,7 +244,9 @@ export const cartController = {
         return;
       }
 
-      cart.items = cart.items.filter((i) => i.productId.toString() !== productId);
+      cart.items = cart.items.filter(
+        (i) => !(i.productId.toString() === productId && (variantId === undefined || (i.variantId || '') === cleanVariantId))
+      );
 
       if (cart.items.length === 0) {
         await Cart.deleteOne({ userId });
@@ -221,7 +257,7 @@ export const cartController = {
         const products = await Product.find({ _id: { $in: productIds } }).lean();
         const priceMap = Object.fromEntries(products.map((p) => [p._id.toString(), p.price]));
         cart.subtotal = cart.items.reduce(
-          (sum, i) => sum + (priceMap[i.productId.toString()] || 0) * i.quantity,
+          (sum, i) => sum + (i.variantPrice ?? priceMap[i.productId.toString()] ?? 0) * i.quantity,
           0
         );
         await cart.save();

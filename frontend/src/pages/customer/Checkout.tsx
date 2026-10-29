@@ -18,12 +18,14 @@ import {
 import MainLayout from '../../components/layout/MainLayout';
 import { useCartStore } from '../../store/cartStore';
 import { useAddressStore } from '../../store/addressStore';
+import { useAuthStore } from '../../store/authStore';
 import { toast } from '../../store/toastStore';
 import { api } from '../../services/api';
 import { AddressLabel, AddressFormData } from '../../types';
 
 export const Checkout = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const { cart, fetchCart, clearCart } = useCartStore();
   const {
     addresses,
@@ -53,9 +55,14 @@ export const Checkout = () => {
   const [customerNote, setCustomerNote] = useState('');
 
   useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast.info('Please sign in to complete checkout');
+      navigate('/login?redirect=/checkout');
+      return;
+    }
     fetchCart();
     fetchAddresses();
-  }, [fetchCart, fetchAddresses]);
+  }, [authLoading, isAuthenticated, navigate, fetchCart, fetchAddresses]);
 
   useEffect(() => {
     if (activeAddress) {
@@ -151,6 +158,9 @@ export const Checkout = () => {
         items: cart.items.map((i) => ({
           productId: typeof i.productId === 'object' ? i.productId._id : i.productId,
           quantity: i.quantity,
+          variantId: i.variantId,
+          variantLabel: i.variantLabel,
+          variantPrice: i.variantPrice || (typeof i.productId === 'object' ? i.productId.price : undefined),
         })),
         deliveryType,
         customerNote: customerNote.trim() || undefined,
@@ -587,16 +597,18 @@ export const Checkout = () => {
                 {cart.items.map((item) => {
                   const prod = typeof item.productId === 'object' ? item.productId : null;
                   if (!prod) return null;
+                  const itemPrice = item.variantPrice || prod.price;
+                  const itemKey = `${prod._id}_${item.variantId || 'base'}`;
                   return (
-                    <div key={prod._id} className="flex items-center justify-between gap-2 text-xs">
+                    <div key={itemKey} className="flex items-center justify-between gap-2 text-xs">
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-slate-900 dark:text-[#F9FAFB] truncate">{prod.name}</p>
                         <p className="text-[10px] text-slate-400 dark:text-[#A7B3C5]">
-                          {prod.unit} × {item.quantity}
+                          {item.variantLabel || prod.unit} × {item.quantity}
                         </p>
                       </div>
                       <span className="font-black text-slate-900 dark:text-[#F9FAFB] shrink-0">
-                        ₹{prod.price * item.quantity}
+                        ₹{(itemPrice * item.quantity).toFixed(0)}
                       </span>
                     </div>
                   );

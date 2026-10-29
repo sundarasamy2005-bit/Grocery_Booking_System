@@ -84,9 +84,8 @@ export const HeaderSearch = ({
 
   const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
-    if (!isAuthenticated) {
-      toast.info('Please sign in to add items to your cart');
-      navigate('/login');
+    if (product.stock <= 0 || !product.isAvailable) {
+      toast.error('Item is out of stock');
       return;
     }
 
@@ -97,6 +96,11 @@ export const HeaderSearch = ({
       setTimeout(() => {
         setAddedIds((prev) => ({ ...prev, [product._id]: false }));
       }, 1500);
+    } else {
+      const err = useCartStore.getState().error;
+      if (err && !useCartStore.getState().conflictModal) {
+        toast.error(err);
+      }
     }
   };
 

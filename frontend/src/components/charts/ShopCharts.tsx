@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, AlertTriangle, Users, IndianRupee, ShoppingBag, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Users, ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // ─── 1. DAY-BY-DAY SALES LINE GRAPH ──────────────────────────
@@ -302,7 +302,7 @@ interface CustomerGrowthHistogramProps {
   uniqueCustomers: number;
 }
 
-export const formatBucketLabel = (period: string): { range: string; month: string } => {
+const formatBucketLabel = (period: string): { range: string; month: string } => {
   if (!period) return { range: '', month: '' };
   const parts = period.split('-').map((s) => s.trim());
   if (parts.length === 2) {

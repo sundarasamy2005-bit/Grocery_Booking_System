@@ -4,6 +4,7 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShoppingCart, Tag } from 
 import MainLayout from '../../components/layout/MainLayout';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
+import { toast } from '../../store/toastStore';
 
 const PRODUCT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=80';
 
@@ -13,9 +14,16 @@ const Cart = () => {
   const { cart, isLoading, fetchCart, updateQuantity, removeItem, clearCart } = useCartStore();
 
   useEffect(() => {
-    if (isAuthenticated) fetchCart();
-    else navigate('/login');
-  }, [isAuthenticated, fetchCart, navigate]);
+    fetchCart();
+  }, [fetchCart]);
+
+  const handleProceedToCheckout = (e: React.MouseEvent) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      toast.info('Please sign in to proceed to checkout');
+      navigate('/login?redirect=/checkout');
+    }
+  };
 
   if (isLoading && !cart) {
     return (
@@ -72,74 +80,90 @@ const Cart = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Items */}
           <div className="flex-1 space-y-3">
-            {cart.items.map((item, idx) => (
-              <div
-                key={item.productId._id}
-                className={`card p-4 flex items-center gap-4 animate-fade-in-up border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033]`}
-                style={{ animationDelay: `${idx * 60}ms` }}
-              >
-                {/* Image */}
-                <div className="h-20 w-20 flex-shrink-0 bg-gray-50 dark:bg-[#111827] rounded-xl overflow-hidden border border-gray-100 dark:border-[#2D3748]">
-                  {item.productId.imageUrl ? (
-                    <img
-                      src={item.productId.imageUrl}
-                      alt={item.productId.name}
-                      className="h-full w-full object-contain p-1 mix-blend-multiply dark:mix-blend-normal"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = PRODUCT_FALLBACK_IMAGE;
-                      }}
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-gray-300 dark:text-slate-600">
-                      <ShoppingBag size={24} />
+            {cart.items.map((item, idx) => {
+              const itemPrice = item.variantPrice || item.productId.price;
+              const itemKey = `${item.productId._id}_${item.variantId || 'base'}`;
+
+              return (
+                <div
+                  key={itemKey}
+                  className={`card p-4 flex items-center gap-4 animate-fade-in-up border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033]`}
+                  style={{ animationDelay: `${idx * 60}ms` }}
+                >
+                  {/* Image */}
+                  <div className="h-20 w-20 flex-shrink-0 bg-gray-50 dark:bg-[#111827] rounded-xl overflow-hidden border border-gray-100 dark:border-[#2D3748]">
+                    {item.productId.imageUrl ? (
+                      <img
+                        src={item.productId.imageUrl}
+                        alt={item.productId.name}
+                        className="h-full w-full object-contain p-1 mix-blend-multiply dark:mix-blend-normal"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = PRODUCT_FALLBACK_IMAGE;
+                        }}
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-gray-300 dark:text-slate-600">
+                        <ShoppingBag size={24} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Details */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-gray-900 dark:text-[#F9FAFB] truncate">{item.productId.name}</h4>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                      <span className="text-xs text-gray-400 dark:text-[#A7B3C5]">
+                        {item.variantLabel || item.productId.unit}
+                      </span>
+                      {item.variantLabel && (
+                        <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-[#12352D] px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800">
+                          {item.variantLabel}
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-
-                {/* Details */}
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-gray-900 dark:text-[#F9FAFB] truncate">{item.productId.name}</h4>
-                  <p className="text-xs text-gray-400 dark:text-[#A7B3C5] mt-0.5">{item.productId.unit}</p>
-                  <p className="text-sm font-bold text-primary-600 dark:text-emerald-400 mt-1">₹{item.productId.price} <span className="text-gray-400 dark:text-[#A7B3C5] font-normal">each</span></p>
-                  {!item.productId.isAvailable && (
-                    <p className="text-xs text-red-500 mt-1 font-medium">⚠ Unavailable</p>
-                  )}
-                </div>
-
-                {/* Quantity + Delete */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#111827] rounded-xl p-1 border border-transparent dark:border-[#2D3748]">
-                    <button
-                      onClick={() => updateQuantity(item.productId._id, item.quantity - 1)}
-                      disabled={item.quantity <= 1 || isLoading}
-                      className="h-7 w-7 flex items-center justify-center rounded-lg bg-white dark:bg-[#172033] shadow-sm text-gray-600 dark:text-[#F9FAFB] hover:bg-primary-50 dark:hover:bg-[#12352D] hover:text-primary-600 dark:hover:text-emerald-400 disabled:opacity-40 transition-all cursor-pointer"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="w-8 text-center text-sm font-bold text-gray-900 dark:text-[#F9FAFB]">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.productId._id, item.quantity + 1)}
-                      disabled={item.quantity >= item.productId.stock || isLoading}
-                      className="h-7 w-7 flex items-center justify-center rounded-lg bg-white dark:bg-[#172033] shadow-sm text-gray-600 dark:text-[#F9FAFB] hover:bg-primary-50 dark:hover:bg-[#12352D] hover:text-primary-600 dark:hover:text-emerald-400 disabled:opacity-40 transition-all cursor-pointer"
-                    >
-                      <Plus size={14} />
-                    </button>
+                    <p className="text-sm font-bold text-primary-600 dark:text-emerald-400 mt-1">
+                      ₹{itemPrice} <span className="text-gray-400 dark:text-[#A7B3C5] font-normal">each</span>
+                    </p>
+                    {!item.productId.isAvailable && (
+                      <p className="text-xs text-red-500 mt-1 font-medium">⚠ Unavailable</p>
+                    )}
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-sm font-extrabold text-gray-900 dark:text-[#F9FAFB]">₹{(item.productId.price * item.quantity).toFixed(0)}</p>
-                  </div>
+                  {/* Quantity + Delete */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#111827] rounded-xl p-1 border border-transparent dark:border-[#2D3748]">
+                      <button
+                        onClick={() => updateQuantity(item.productId._id, item.quantity - 1, item.variantId)}
+                        disabled={item.quantity <= 1 || isLoading}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-white dark:bg-[#172033] shadow-sm text-gray-600 dark:text-[#F9FAFB] hover:bg-primary-50 dark:hover:bg-[#12352D] hover:text-primary-600 dark:hover:text-emerald-400 disabled:opacity-40 transition-all cursor-pointer"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="w-8 text-center text-sm font-bold text-gray-900 dark:text-[#F9FAFB]">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.productId._id, item.quantity + 1, item.variantId)}
+                        disabled={item.quantity >= item.productId.stock || isLoading}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-white dark:bg-[#172033] shadow-sm text-gray-600 dark:text-[#F9FAFB] hover:bg-primary-50 dark:hover:bg-[#12352D] hover:text-primary-600 dark:hover:text-emerald-400 disabled:opacity-40 transition-all cursor-pointer"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
 
-                  <button
-                    onClick={() => removeItem(item.productId._id)}
-                    className="h-8 w-8 flex items-center justify-center text-gray-300 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all cursor-pointer"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                    <div className="text-right">
+                      <p className="text-sm font-extrabold text-gray-900 dark:text-[#F9FAFB]">₹{(itemPrice * item.quantity).toFixed(0)}</p>
+                    </div>
+
+                    <button
+                      onClick={() => removeItem(item.productId._id, item.variantId)}
+                      className="h-8 w-8 flex items-center justify-center text-gray-300 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all cursor-pointer"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Order Summary */}
@@ -193,6 +217,7 @@ const Cart = () => {
                   <>
                     <Link
                       to="/checkout"
+                      onClick={handleProceedToCheckout}
                       className="w-full btn-primary dark:bg-emerald-600 dark:hover:bg-emerald-500 flex items-center justify-center py-3.5 rounded-xl text-base font-bold shadow-md shadow-emerald-950/40"
                     >
                       Proceed to Checkout <ArrowRight className="ml-2 h-5 w-5" />

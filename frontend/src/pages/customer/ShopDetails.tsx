@@ -6,6 +6,7 @@ import { api } from '../../services/api';
 import { Shop, Product, Category } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
+import { toast } from '../../store/toastStore';
 
 const PRODUCT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=80';
 
@@ -116,8 +117,19 @@ const ShopDetails = () => {
   });
 
   const handleAdd = async (product: Product) => {
-    if (!isAuthenticated) { alert('Please login to add items to cart'); return; }
-    await addToCart(product, 1);
+    if (product.stock <= 0 || !product.isAvailable) {
+      toast.error('Item is out of stock');
+      return;
+    }
+    const ok = await addToCart(product, 1);
+    if (ok) {
+      toast.success(`Added ${product.name} to cart!`);
+    } else {
+      const err = useCartStore.getState().error;
+      if (err && !useCartStore.getState().conflictModal) {
+        toast.error(err);
+      }
+    }
   };
 
   if (loading) {

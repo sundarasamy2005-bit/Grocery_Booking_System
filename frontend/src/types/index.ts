@@ -75,9 +75,24 @@ export interface Product {
   isAvailable: boolean;
 }
 
+export interface ProductVariant {
+  id: string;
+  label: string;
+  shortLabel?: string;
+  price: number;
+  originalPrice?: number;
+  badge?: string;
+  isDefault?: boolean;
+}
+
 export interface CartItem {
+  _id?: string;
   productId: Product;
   quantity: number;
+  variantId?: string;
+  variantLabel?: string;
+  variantPrice?: number;
+  variantOriginalPrice?: number;
 }
 
 export interface Cart {
@@ -94,6 +109,8 @@ export interface OrderItem {
   price: number;
   quantity: number;
   imageUrl?: string;
+  variantId?: string;
+  variantLabel?: string;
 }
 
 export interface DeliveryLocation {

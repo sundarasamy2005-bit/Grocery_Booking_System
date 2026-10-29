@@ -13,6 +13,20 @@ const cartItemSchema = new mongoose.Schema<ICartItem>(
       required: true,
       min: 1,
     },
+    variantId: {
+      type: String,
+      default: '',
+    },
+    variantLabel: {
+      type: String,
+      default: '',
+    },
+    variantPrice: {
+      type: Number,
+    },
+    variantOriginalPrice: {
+      type: Number,
+    },
   },
   { _id: false }
 );

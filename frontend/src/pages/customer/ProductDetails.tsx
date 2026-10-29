@@ -222,18 +222,6 @@ export const ProductDetails = () => {
   // Active tab for product info
   const [activeTab, setActiveTab] = useState<'details' | 'freshness' | 'reviews'>('details');
 
-  // Compute quantity in cart
-  const cartItem = useMemo(() => {
-    if (!product || !cart?.items) return null;
-    return cart.items.find((item) => {
-      const pid = typeof item.productId === 'object' ? item.productId._id : item.productId;
-      return pid === product._id;
-    });
-  }, [product, cart?.items]);
-
-  const cartQty = cartItem?.quantity || 0;
-  const isOutOfStock = product ? product.stock <= 0 || !product.isAvailable : false;
-
   // Weight & Pack size variants
   const variants = useMemo(() => {
     if (!product) return [];
@@ -251,6 +239,38 @@ export const ProductDetails = () => {
       setSelectedVariant(null);
     }
   }, [variants]);
+
+  // Selected variant ID (or empty string for base product)
+  const activeVariantId = selectedVariant?.id || '';
+
+  // Compute quantity in cart specifically for the currently selected variant
+  const cartItem = useMemo(() => {
+    if (!product || !cart?.items) return null;
+    return cart.items.find((item) => {
+      const pid = typeof item.productId === 'object' ? item.productId._id : item.productId;
+      if (pid !== product._id) return false;
+      const vid = item.variantId || '';
+      if (activeVariantId) {
+        return vid === activeVariantId;
+      }
+      return !vid;
+    });
+  }, [product, cart?.items, activeVariantId]);
+
+  const cartQty = cartItem?.quantity || 0;
+  const isOutOfStock = product ? product.stock <= 0 || !product.isAvailable : false;
+
+  const getQtyForVariant = useCallback(
+    (variantId: string) => {
+      if (!product || !cart?.items) return 0;
+      const item = cart.items.find((i) => {
+        const pid = typeof i.productId === 'object' ? i.productId._id : i.productId;
+        return pid === product._id && (i.variantId || '') === variantId;
+      });
+      return item ? item.quantity : 0;
+    },
+    [product, cart?.items]
+  );
 
   // Gallery images array
   const galleryImages = useMemo(() => {
@@ -389,11 +409,19 @@ export const ProductDetails = () => {
 
   // Handle Cart Interactions
   const handleAddToCart = async () => {
-    if (!product || isOutOfStock) return;
-    const ok = await addToCart(product, 1);
+    if (!product || isOutOfStock) {
+      toast.error('Item is out of stock');
+      return;
+    }
+    const ok = await addToCart(product, 1, false, selectedVariant || undefined);
     if (ok) {
       const variantText = selectedVariant ? ` (${selectedVariant.label})` : '';
       toast.success(`Added ${product.name}${variantText} to cart!`);
+    } else {
+      const err = useCartStore.getState().error;
+      if (err && !useCartStore.getState().conflictModal) {
+        toast.error(err);
+      }
     }
   };
 
@@ -403,24 +431,30 @@ export const ProductDetails = () => {
       toast.error(`Only ${product.stock} items in stock!`);
       return;
     }
-    await updateQuantity(product._id, cartQty + 1);
+    await updateQuantity(product._id, cartQty + 1, activeVariantId);
   };
 
   const handleDecrement = async () => {
     if (!product) return;
     if (cartQty <= 1) {
-      await removeItem(product._id);
-      toast.info(`Removed ${product.name} from cart`);
+      await removeItem(product._id, activeVariantId);
+      const variantText = selectedVariant ? ` (${selectedVariant.label})` : '';
+      toast.info(`Removed ${product.name}${variantText} from cart`);
     } else {
-      await updateQuantity(product._id, cartQty - 1);
+      await updateQuantity(product._id, cartQty - 1, activeVariantId);
     }
   };
 
   const handleBuyNow = async () => {
     if (!product || isOutOfStock) return;
     if (cartQty === 0) {
-      const ok = await addToCart(product, 1);
+      const ok = await addToCart(product, 1, false, selectedVariant || undefined);
       if (!ok) return;
+    }
+    if (!isAuthenticated) {
+      toast.info('Please sign in to complete checkout');
+      navigate('/login?redirect=/checkout');
+      return;
     }
     navigate('/checkout');
   };
@@ -1052,30 +1086,38 @@ export const ProductDetails = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                     {variants.map((v) => {
                       const isSelected = selectedVariant?.id === v.id;
+                      const vCartQty = getQtyForVariant(v.id);
                       return (
                         <button
                           key={v.id}
                           type="button"
                           onClick={() => setSelectedVariant(v)}
-                          className={`relative p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between ${
+                          className={`relative p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between cursor-pointer ${
                             isSelected
-                              ? 'border-sky-600 dark:border-emerald-400 bg-sky-50/80 dark:bg-[#12352D] ring-2 ring-sky-500/30 dark:ring-emerald-500/30 shadow-xs'
+                              ? 'border-emerald-600 dark:border-emerald-400 bg-emerald-50/80 dark:bg-[#12352D] ring-2 ring-emerald-500/30 dark:ring-emerald-500/30 shadow-xs'
                               : 'border-slate-200 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-slate-300 dark:hover:border-emerald-500/50 hover:bg-slate-50/50 dark:hover:bg-[#111827]'
                           }`}
                         >
-                          {v.badge && (
-                            <span
-                              className={`absolute -top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-md ${
-                                isSelected
-                                  ? 'bg-sky-600 dark:bg-emerald-600 text-white'
-                                  : 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                              }`}
-                            >
-                              {v.badge}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1 absolute -top-2 right-2">
+                            {vCartQty > 0 && (
+                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-emerald-600 text-white shadow-2xs">
+                                ✓ {vCartQty} in cart
+                              </span>
+                            )}
+                            {v.badge && (
+                              <span
+                                className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                                  isSelected
+                                    ? 'bg-emerald-700 text-white'
+                                    : 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                }`}
+                              >
+                                {v.badge}
+                              </span>
+                            )}
+                          </div>
                           <div>
-                            <span className={`block text-xs font-black ${isSelected ? 'text-sky-950 dark:text-emerald-200' : 'text-slate-800 dark:text-[#F9FAFB]'}`}>
+                            <span className={`block text-xs font-black ${isSelected ? 'text-emerald-950 dark:text-emerald-200' : 'text-slate-800 dark:text-[#F9FAFB]'}`}>
                               {v.label}
                             </span>
                           </div>
@@ -1184,13 +1226,13 @@ export const ProductDetails = () => {
                     Item Unavailable
                   </button>
                 ) : cartQty > 0 ? (
-                  /* Quantity Stepper Sync with Cart */
+                  /* Quantity Stepper Sync with Cart for Selected Variant */
                   <div className="flex items-center justify-between sm:justify-start gap-4 p-2 bg-slate-100 dark:bg-[#111827] rounded-2xl border border-transparent dark:border-[#2D3748]">
-                    <div className="flex items-center gap-2 bg-sky-600 dark:bg-emerald-600 text-white rounded-xl p-1 shadow-sm">
+                    <div className="flex items-center gap-2 bg-emerald-600 text-white rounded-xl p-1 shadow-sm">
                       <button
                         type="button"
                         onClick={handleDecrement}
-                        className="w-9 h-9 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold transition-all active:scale-90"
+                        className="w-9 h-9 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-bold transition-all active:scale-90 cursor-pointer"
                         title="Decrease quantity"
                       >
                         <Minus size={16} strokeWidth={3} />
@@ -1202,25 +1244,32 @@ export const ProductDetails = () => {
                         type="button"
                         onClick={handleIncrement}
                         disabled={cartQty >= product.stock}
-                        className="w-9 h-9 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold transition-all active:scale-90 disabled:opacity-50"
+                        className="w-9 h-9 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-bold transition-all active:scale-90 disabled:opacity-50 cursor-pointer"
                         title="Increase quantity"
                       >
                         <Plus size={16} strokeWidth={3} />
                       </button>
                     </div>
-                    <span className="text-xs font-bold text-slate-600 dark:text-[#A7B3C5] pr-2">
-                      Total: ₹{activePrice * cartQty}
-                    </span>
+                    <div className="flex flex-col pr-2">
+                      <span className="text-xs font-bold text-slate-800 dark:text-[#F9FAFB]">
+                        Total: ₹{activePrice * cartQty}
+                      </span>
+                      {selectedVariant && (
+                        <span className="text-[10px] text-slate-500 dark:text-[#A7B3C5]">
+                          {cartQty} × {selectedVariant.label}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   /* Add to Cart Button */
                   <button
                     type="button"
                     onClick={handleAddToCart}
-                    className="flex-1 py-3.5 px-6 rounded-2xl bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black text-sm shadow-lg shadow-sky-600/20 dark:shadow-emerald-950/40 hover:shadow-sky-600/30 transition-all flex items-center justify-center gap-2 active:scale-98"
+                    className="flex-1 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
                   >
                     <ShoppingCart size={18} />
-                    Add to Cart
+                    Add {selectedVariant ? `(${selectedVariant.label})` : ''} to Cart
                   </button>
                 )}
 

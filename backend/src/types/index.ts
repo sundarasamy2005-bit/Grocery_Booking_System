@@ -97,6 +97,10 @@ export interface IProduct extends Document {
 export interface ICartItem {
   productId: string;
   quantity: number;
+  variantId?: string;
+  variantLabel?: string;
+  variantPrice?: number;
+  variantOriginalPrice?: number;
 }
 
 export interface ICart extends Document {
@@ -134,6 +138,7 @@ export interface IOrderItem {
   price: number;
   quantity: number;
   imageUrl?: string;
+  variantLabel?: string;
 }
 
 export interface IDeliveryAddress {

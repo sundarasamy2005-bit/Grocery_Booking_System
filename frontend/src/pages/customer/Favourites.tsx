@@ -31,14 +31,18 @@ export const Favourites = () => {
   };
 
   const handleAddToCart = async (product: Product) => {
-    if (!isAuthenticated) {
-      toast.info('Please sign in to add items to your cart');
-      navigate('/login');
+    if (product.stock <= 0 || !product.isAvailable) {
+      toast.error('Item is out of stock');
       return;
     }
     const success = await addToCart(product, 1);
     if (success) {
       toast.success(`Added ${product.name} to cart`);
+    } else {
+      const err = useCartStore.getState().error;
+      if (err && !useCartStore.getState().conflictModal) {
+        toast.error(err);
+      }
     }
   };
 

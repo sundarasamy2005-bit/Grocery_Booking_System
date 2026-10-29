@@ -1,5 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../store/cartStore';
+import { useAuthStore } from '../../store/authStore';
+import { toast } from '../../store/toastStore';
 import { ShoppingBag, X, Plus, Minus, Trash2, ArrowRight, Store, ShieldCheck } from 'lucide-react';
 
 const PRODUCT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=80';
@@ -11,6 +13,7 @@ interface CartDrawerProps {
 
 export const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
   const { cart, isLoading, updateQuantity, removeItem, clearCart } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
 
   if (!isOpen) return null;
@@ -23,7 +26,12 @@ export const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
 
   const handleCheckout = () => {
     onClose();
-    navigate('/checkout');
+    if (!isAuthenticated) {
+      toast.info('Please sign in to proceed to checkout');
+      navigate('/login?redirect=/checkout');
+    } else {
+      navigate('/checkout');
+    }
   };
 
   return (
@@ -93,72 +101,85 @@ export const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                 </button>
               </div>
             ) : (
-              items.map((item) => (
-                <div
-                  key={item.productId._id}
-                  className="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-slate-200 dark:hover:border-slate-700 transition-all shadow-sm"
-                >
-                  <div className="h-16 w-16 rounded-xl bg-slate-50 dark:bg-[#111827] border border-slate-100 dark:border-[#2D3748] overflow-hidden flex items-center justify-center shrink-0">
-                    {item.productId.imageUrl ? (
-                      <img
-                        src={item.productId.imageUrl}
-                        alt={item.productId.name}
-                        className="h-full w-full object-contain p-1 mix-blend-multiply dark:mix-blend-normal"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = PRODUCT_FALLBACK_IMAGE;
-                        }}
-                      />
-                    ) : (
-                      <ShoppingBag size={20} className="text-slate-300 dark:text-[#2D3748]" />
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[#F9FAFB] truncate">
-                      {item.productId.name}
-                    </p>
-                    <p className="text-[11px] text-slate-400 dark:text-[#A7B3C5]">{item.productId.unit}</p>
-                    <p className="text-xs font-extrabold text-emerald-700 dark:text-[#34D399] mt-0.5">
-                      ₹{item.productId.price}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#111827] rounded-xl p-1 border border-slate-200/60 dark:border-[#2D3748]">
-                      <button
-                        onClick={() => updateQuantity(item.productId._id, item.quantity - 1)}
-                        disabled={item.quantity <= 1 || isLoading}
-                        className="h-6 w-6 rounded-lg bg-white dark:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] flex items-center justify-center shadow-xs hover:bg-emerald-50 dark:hover:bg-[#12352D] hover:text-emerald-600 disabled:opacity-40 transition-colors cursor-pointer"
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span className="w-5 text-center text-xs font-bold text-slate-800 dark:text-[#F9FAFB]">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item.productId._id, item.quantity + 1)}
-                        disabled={item.quantity >= item.productId.stock || isLoading}
-                        className="h-6 w-6 rounded-lg bg-white dark:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] flex items-center justify-center shadow-xs hover:bg-emerald-50 dark:hover:bg-[#12352D] hover:text-emerald-600 disabled:opacity-40 transition-colors cursor-pointer"
-                      >
-                        <Plus size={12} />
-                      </button>
+              items.map((item) => {
+                const itemPrice = item.variantPrice || item.productId.price;
+                const itemKey = `${item.productId._id}_${item.variantId || 'base'}`;
+                return (
+                  <div
+                    key={itemKey}
+                    className="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-slate-200 dark:hover:border-slate-700 transition-all shadow-sm"
+                  >
+                    <div className="h-16 w-16 rounded-xl bg-slate-50 dark:bg-[#111827] border border-slate-100 dark:border-[#2D3748] overflow-hidden flex items-center justify-center shrink-0">
+                      {item.productId.imageUrl ? (
+                        <img
+                          src={item.productId.imageUrl}
+                          alt={item.productId.name}
+                          className="h-full w-full object-contain p-1 mix-blend-multiply dark:mix-blend-normal"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = PRODUCT_FALLBACK_IMAGE;
+                          }}
+                        />
+                      ) : (
+                        <ShoppingBag size={20} className="text-slate-300 dark:text-[#2D3748]" />
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-extrabold text-slate-900 dark:text-[#F9FAFB]">
-                        ₹{(item.productId.price * item.quantity).toFixed(0)}
-                      </span>
-                      <button
-                        onClick={() => removeItem(item.productId._id)}
-                        className="text-slate-300 dark:text-[#A7B3C5]/40 hover:text-red-500 transition-colors p-0.5 cursor-pointer"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[#F9FAFB] truncate">
+                        {item.productId.name}
+                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <span className="text-[11px] text-slate-400 dark:text-[#A7B3C5]">
+                          {item.variantLabel || item.productId.unit}
+                        </span>
+                        {item.variantLabel && (
+                          <span className="text-[9px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-[#12352D] px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800">
+                            {item.variantLabel}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-extrabold text-emerald-700 dark:text-[#34D399] mt-0.5">
+                        ₹{itemPrice}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#111827] rounded-xl p-1 border border-slate-200/60 dark:border-[#2D3748]">
+                        <button
+                          onClick={() => updateQuantity(item.productId._id, item.quantity - 1, item.variantId)}
+                          disabled={item.quantity <= 1 || isLoading}
+                          className="h-6 w-6 rounded-lg bg-white dark:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] flex items-center justify-center shadow-xs hover:bg-emerald-50 dark:hover:bg-[#12352D] hover:text-emerald-600 disabled:opacity-40 transition-colors cursor-pointer"
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <span className="w-5 text-center text-xs font-bold text-slate-800 dark:text-[#F9FAFB]">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.productId._id, item.quantity + 1, item.variantId)}
+                          disabled={item.quantity >= item.productId.stock || isLoading}
+                          className="h-6 w-6 rounded-lg bg-white dark:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] flex items-center justify-center shadow-xs hover:bg-emerald-50 dark:hover:bg-[#12352D] hover:text-emerald-600 disabled:opacity-40 transition-colors cursor-pointer"
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-extrabold text-slate-900 dark:text-[#F9FAFB]">
+                          ₹{(itemPrice * item.quantity).toFixed(0)}
+                        </span>
+                        <button
+                          onClick={() => removeItem(item.productId._id, item.variantId)}
+                          className="text-slate-300 dark:text-[#A7B3C5]/40 hover:text-red-500 transition-colors p-0.5 cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

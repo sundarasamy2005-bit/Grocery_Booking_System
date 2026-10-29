@@ -5,9 +5,9 @@ import { requireRole } from '../middleware/role.middleware';
 
 const router = Router();
 
-// All cart routes require customer authentication
+// All cart routes require authentication (customer, admin, shopOwner can all use the cart)
 router.use(authMiddleware);
-router.use(requireRole('customer'));
+router.use(requireRole('customer', 'admin', 'shopOwner'));
 
 router.get('/', cartController.getCart);
 router.post('/items', cartController.addToCart);

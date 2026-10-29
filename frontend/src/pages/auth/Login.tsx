@@ -68,10 +68,15 @@ const Login = () => {
   }, [regState, setValue]);
 
   const routeByRole = (userRole?: string) => {
+    const params = new URLSearchParams(location.search);
+    const redirectUrl = params.get('redirect');
+
     if (userRole === 'admin') {
       navigate('/admin/dashboard', { replace: true });
     } else if (userRole === 'shopOwner') {
       navigate('/shop/dashboard', { replace: true });
+    } else if (redirectUrl) {
+      navigate(redirectUrl, { replace: true });
     } else {
       navigate('/', { replace: true });
     }

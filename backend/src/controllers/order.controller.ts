@@ -27,14 +27,20 @@ export const orderController = {
       const user = req.user!;
       const {
         shopId,
-        items,          // [{ productId, quantity }]
+        items,          // [{ productId, quantity, variantId, variantLabel, variantPrice }]
         deliveryType,   // 'pickup' | 'delivery'
         addressId,      // optional if deliveryLocation provided
         deliveryLocation, // { address, latitude, longitude }
         customerNote,
       } = req.body as {
         shopId: string;
-        items: { productId: string; quantity: number }[];
+        items: {
+          productId: string;
+          quantity: number;
+          variantId?: string;
+          variantLabel?: string;
+          variantPrice?: number;
+        }[];
         deliveryType: 'pickup' | 'delivery';
         addressId?: string;
         deliveryLocation?: { address: string; latitude: number; longitude: number };
@@ -181,15 +187,19 @@ export const orderController = {
           return;
         }
 
+        const effectivePrice = reqItem.variantPrice && reqItem.variantPrice > 0 ? reqItem.variantPrice : product.price;
+        const displayName = reqItem.variantLabel ? `${product.name} (${reqItem.variantLabel})` : product.name;
+
         orderItems.push({
           productId: product._id.toString(),
-          name: product.name,
-          price: product.price,     // Always use DB price
+          name: displayName,
+          price: effectivePrice,
           quantity: reqItem.quantity,
           imageUrl: product.imageUrl,
+          variantLabel: reqItem.variantLabel || undefined,
         });
 
-        subtotal += product.price * reqItem.quantity;
+        subtotal += effectivePrice * reqItem.quantity;
       }
 
       // Check minimum order

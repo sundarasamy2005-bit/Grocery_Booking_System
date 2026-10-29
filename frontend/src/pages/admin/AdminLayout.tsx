@@ -8,6 +8,9 @@ import {
   ShieldCheck,
   ChevronRight,
   LogOut,
+  Monitor,
+  Laptop,
+  ArrowRight,
 } from 'lucide-react';
 import MainLayout from '../../components/layout/MainLayout';
 import { useAuthStore } from '../../store/authStore';
@@ -40,7 +43,34 @@ export const AdminLayout = () => {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+        {/* Mobile / Android / iPhone View Shield: Admin Portal is Laptop, PC, Monitor Only */}
+        <div className="lg:hidden min-h-[60vh] flex flex-col items-center justify-center p-6 text-center space-y-5 bg-white dark:bg-[#172033] rounded-3xl border border-slate-200/80 dark:border-[#2D3748] shadow-sm">
+          <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 flex items-center justify-center shadow-xs">
+            <Monitor size={32} />
+          </div>
+          <div className="space-y-2 max-w-sm">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-[#111827] text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-[#A7B3C5]">
+              <Laptop size={13} />
+              Laptop, PC, Monitor Only
+            </div>
+            <h2 className="text-xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">
+              Desktop Screen Required
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-[#A7B3C5] leading-relaxed">
+              The Admin Portal is exclusively designed for laptop, PC, and monitor displays. Mobile, Android, and iPhone views are not supported for root administration.
+            </p>
+          </div>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <span>Return to Customer Home</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        {/* Laptop / PC / Monitor View Only */}
+        <div className="hidden lg:flex flex-row gap-8">
           {/* Sidebar */}
           <aside className="w-full lg:w-64 shrink-0">
             <div className="card overflow-hidden shadow-xs border border-slate-100 dark:border-[#2D3748] dark:bg-[#172033] sticky top-24">

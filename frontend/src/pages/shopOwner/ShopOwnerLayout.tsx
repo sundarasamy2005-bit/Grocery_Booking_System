@@ -1,5 +1,16 @@
 import { Link, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Store, Package, ShoppingBag, BarChart3, Settings, Brain, Cpu } from 'lucide-react';
+import {
+  Store,
+  Package,
+  ShoppingBag,
+  BarChart3,
+  Settings,
+  Brain,
+  Cpu,
+  Monitor,
+  Laptop,
+  ArrowRight,
+} from 'lucide-react';
 import MainLayout from '../../components/layout/MainLayout';
 import { useAuthStore } from '../../store/authStore';
 
@@ -11,13 +22,6 @@ import ShopProfile from './ShopProfile';
 import ShopAiInsights from './ShopAiInsights';
 import ShopAutomation from './ShopAutomation';
 import ShopSettings from './ShopSettings';
-
-const Placeholder = ({ name }: { name: string }) => (
-  <div className="bg-white dark:bg-[#172033] shadow rounded-lg p-6 border border-gray-100 dark:border-[#2D3748]">
-    <h2 className="text-lg font-medium text-gray-900 dark:text-[#F9FAFB] mb-4">{name}</h2>
-    <p className="text-gray-500 dark:text-[#A7B3C5]">This feature is under construction.</p>
-  </div>
-);
 
 const ShopOwnerLayout = () => {
   const { user } = useAuthStore();
@@ -40,9 +44,36 @@ const ShopOwnerLayout = () => {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row gap-8">
+        {/* Mobile / Android / iPhone View Shield: Shop Owner Dashboard is Laptop, PC, Monitor Only */}
+        <div className="lg:hidden min-h-[60vh] flex flex-col items-center justify-center p-6 text-center space-y-5 bg-white dark:bg-[#172033] rounded-3xl border border-gray-200 dark:border-[#2D3748] shadow-sm">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-[#34D399] border border-emerald-200 dark:border-emerald-900/50 flex items-center justify-center shadow-xs">
+            <Monitor size={32} />
+          </div>
+          <div className="space-y-2 max-w-sm">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-[#111827] text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-[#A7B3C5]">
+              <Laptop size={13} />
+              Laptop, PC, Monitor Only
+            </div>
+            <h2 className="text-xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">
+              Desktop Screen Required
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-[#A7B3C5] leading-relaxed">
+              The Shop Owner Dashboard is exclusively designed for laptop, PC, and monitor displays. Mobile, Android, and iPhone views are not supported for store management.
+            </p>
+          </div>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <span>Return to Customer Home</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        {/* Laptop / PC / Monitor View Only */}
+        <div className="hidden lg:flex flex-row gap-8">
           {/* Sidebar */}
-          <div className="w-full md:w-64 flex-shrink-0">
+          <div className="w-full lg:w-64 flex-shrink-0">
             <div className="bg-white dark:bg-[#172033] shadow-xs rounded-2xl border border-gray-200 dark:border-[#2D3748] overflow-hidden">
               <div className="p-4 bg-gray-50 dark:bg-[#111827] border-b border-gray-200 dark:border-[#2D3748]">
                 <h2 className="font-bold text-gray-900 dark:text-[#F9FAFB] text-sm">Shop Management</h2>

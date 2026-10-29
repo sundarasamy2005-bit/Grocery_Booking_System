@@ -115,7 +115,7 @@ const POPULAR_CATEGORIES = [
 export const Home = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
-  const { cart, addToCart, updateQuantity, removeItem } = useCartStore();
+  const { cart, addToCart, updateQuantity, removeItem, fetchCart } = useCartStore();
   const { activeAddress, openModal: openAddressModal, fetchAddresses } = useAddressStore();
   const { isFavorite, toggleFavorite, fetchFavorites } = useFavoriteStore();
 
@@ -151,13 +151,14 @@ export const Home = () => {
     return () => clearInterval(interval);
   }, [isHeroHovered, isSearchFocused]);
 
-  // Load addresses & favorites on mount
+  // Load addresses, favorites & cart on mount
   useEffect(() => {
+    fetchCart();
     if (isAuthenticated) {
       fetchAddresses();
       fetchFavorites();
     }
-  }, [isAuthenticated, fetchAddresses, fetchFavorites]);
+  }, [isAuthenticated, fetchAddresses, fetchFavorites, fetchCart]);
 
   // Load shops, products & categories from database
   useEffect(() => {
@@ -285,6 +286,11 @@ export const Home = () => {
     const ok = await addToCart(product, 1);
     if (ok) {
       toast.success(`Added ${product.name} to cart!`);
+    } else {
+      const err = useCartStore.getState().error;
+      if (err && !useCartStore.getState().conflictModal) {
+        toast.error(err);
+      }
     }
   };
 
@@ -317,13 +323,13 @@ export const Home = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 lg:pb-8">
         {/* Main 2-Column Responsive Desktop Layout matching Screenshot */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           {/* ======================================================== */}
           {/* LEFT COLUMN: Main Grocery Content (~75% on Desktop)     */}
           {/* ======================================================== */}
-          <div className="lg:col-span-8 xl:col-span-9 space-y-8">
+          <div className="lg:col-span-8 xl:col-span-9 space-y-6 sm:space-y-8">
             {/* 1. HERO BANNER with Auto-Moving Animation & Dynamic Slides */}
             {(() => {
               const currentSlide = HERO_SLIDES[heroSlide];
@@ -333,53 +339,53 @@ export const Home = () => {
                 <div
                   onMouseEnter={() => setIsHeroHovered(true)}
                   onMouseLeave={() => setIsHeroHovered(false)}
-                  className={`relative rounded-3xl bg-gradient-to-r ${currentSlide.bgGradient} border border-slate-200/80 dark:border-[#2D3748] p-6 sm:p-10 overflow-hidden shadow-xs transition-colors duration-700`}
+                  className={`relative rounded-3xl bg-gradient-to-r ${currentSlide.bgGradient} border border-slate-200/80 dark:border-[#2D3748] p-4 sm:p-7 lg:p-10 pb-6 sm:pb-8 overflow-hidden shadow-xs transition-colors duration-700`}
                 >
-                  <div key={heroSlide} className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center animate-slide-in-right">
+                  <div key={heroSlide} className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 items-center animate-slide-in-right">
                     {/* Left Hero Content */}
-                    <div className="md:col-span-7 z-10 space-y-4">
+                    <div className="md:col-span-7 z-10 space-y-2.5 sm:space-y-4">
                       {/* Dynamic Tag */}
-                      <span className={`inline-flex items-center gap-1.5 ${currentSlide.tagClass} text-xs font-black px-3 py-1 rounded-full shadow-2xs`}>
-                        <TagIcon size={14} className={currentSlide.iconClass} />
+                      <span className={`inline-flex items-center gap-1.5 ${currentSlide.tagClass} text-[10px] sm:text-xs font-black px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-2xs`}>
+                        <TagIcon size={13} className={currentSlide.iconClass} />
                         {currentSlide.tag}
                       </span>
 
                       {/* Main Headline */}
-                      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight leading-tight">
-                        {currentSlide.title} <br className="hidden sm:inline" />
+                      <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight leading-snug sm:leading-tight">
+                        {currentSlide.title}{' '}
                         <span className={currentSlide.highlightClass}>{currentSlide.titleHighlight}</span>
                       </h1>
 
                       {/* Subtitle */}
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-[#A7B3C5] font-medium max-w-lg leading-relaxed">
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-[#A7B3C5] font-medium max-w-lg leading-relaxed line-clamp-2 sm:line-clamp-none">
                         {currentSlide.subtitle}
                       </p>
 
-                      {/* Action CTAs */}
-                      <div className="flex flex-wrap items-center gap-3 pt-1">
+                      {/* Action CTAs: Side-by-side on mobile, saving vertical space */}
+                      <div className="flex flex-row items-center gap-2 pt-0.5 sm:pt-1">
                         <Link
                           to="/shops"
-                          className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center gap-2 cursor-pointer group"
+                          className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer group text-center"
                         >
                           <span>Explore Shops</span>
-                          <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                          <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
                         </Link>
                         <button
                           type="button"
                           onClick={() => {
                             categoryScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                           }}
-                          className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-[#111827] text-slate-800 dark:text-[#F9FAFB] font-bold text-xs sm:text-sm border border-slate-200 dark:border-[#2D3748] transition-all cursor-pointer shadow-xs"
+                          className="flex-1 sm:flex-none px-3.5 sm:px-4 py-2.5 rounded-xl bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-[#111827] text-slate-800 dark:text-[#F9FAFB] font-bold text-xs sm:text-sm border border-slate-200 dark:border-[#2D3748] transition-all cursor-pointer shadow-xs text-center"
                         >
-                          Browse Categories
+                          Categories
                         </button>
                       </div>
 
-                      {/* Hero Search Box matching screenshot */}
-                      <form onSubmit={handleHeroSearch} className="pt-2 max-w-md">
-                        <div className="flex items-center bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-[#2D3748] p-1.5 shadow-sm focus-within:border-emerald-500 dark:focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 dark:focus-within:ring-emerald-500/20 transition-all">
-                          <div className="pl-3 text-slate-400 dark:text-[#A7B3C5]">
-                            <Search size={18} />
+                      {/* Hero Search Box with Clean, Non-Truncating Placeholder */}
+                      <form onSubmit={handleHeroSearch} className="pt-0.5 sm:pt-1 max-w-md">
+                        <div className="flex items-center bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-[#2D3748] p-1 sm:p-1.5 shadow-sm focus-within:border-emerald-500 dark:focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 dark:focus-within:ring-emerald-500/20 transition-all">
+                          <div className="pl-2.5 text-slate-400 dark:text-[#A7B3C5] shrink-0">
+                            <Search size={15} />
                           </div>
                           <input
                             type="text"
@@ -387,41 +393,41 @@ export const Home = () => {
                             onFocus={() => setIsSearchFocused(true)}
                             onBlur={() => setIsSearchFocused(false)}
                             onChange={(e) => setHeroSearchInput(e.target.value)}
-                            placeholder="Search fresh vegetables, fruits, dairy, staples, or shops..."
-                            className="w-full px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 dark:text-[#F9FAFB] placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none bg-transparent"
+                            placeholder="Search fresh groceries or shops..."
+                            className="w-full min-w-0 px-2 sm:px-2.5 py-1.5 text-xs sm:text-sm font-medium text-slate-800 dark:text-[#F9FAFB] placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none bg-transparent truncate"
                           />
                           <button
                             type="submit"
-                            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 dark:shadow-emerald-950/40 transition-all shrink-0 cursor-pointer"
+                            className="px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 dark:shadow-emerald-950/40 transition-all shrink-0 cursor-pointer"
                           >
                             Search
                           </button>
                         </div>
                       </form>
 
-                      {/* Trust Bullets below Search */}
-                      <div className="flex flex-wrap items-center gap-4 pt-3 text-xs font-bold text-slate-700 dark:text-[#A7B3C5]">
-                        <span className="flex items-center gap-1.5">
-                          <Store size={15} className="text-emerald-600 dark:text-emerald-400" /> Shop Local
+                      {/* Trust Bullets below Search - 2x2 Grid on Mobile, Balanced & Compact */}
+                      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-4 pt-1 sm:pt-2 text-[10px] sm:text-xs font-bold text-slate-700 dark:text-[#A7B3C5]">
+                        <span className="flex items-center gap-1.5 truncate">
+                          <Store size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" /> Shop Local
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <Leaf size={15} className="text-emerald-600 dark:text-emerald-400" /> Fresh Everyday Essentials
+                        <span className="flex items-center gap-1.5 truncate">
+                          <Leaf size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" /> Fresh Essentials
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <Truck size={15} className="text-emerald-600 dark:text-emerald-400" /> Convenient Ordering
+                        <span className="flex items-center gap-1.5 truncate">
+                          <Truck size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" /> Easy Ordering
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <CreditCard size={15} className="text-amber-600 dark:text-amber-400" /> Cash on Delivery
+                        <span className="flex items-center gap-1.5 truncate">
+                          <CreditCard size={13} className="text-amber-600 dark:text-amber-400 shrink-0" /> Cash on Delivery
                         </span>
                       </div>
                     </div>
 
                     {/* Right Hero Image */}
                     <div className="md:col-span-5 relative flex items-center justify-center">
-                      <div className="relative w-full max-w-sm aspect-4/3 flex items-center justify-center">
+                      <div className="relative w-full max-w-sm h-36 sm:h-48 md:h-56 flex items-center justify-center">
                         {/* Handwritten Style Annotation */}
-                        <div className="absolute top-2 left-2 rotate-[-8deg] bg-white/95 dark:bg-[#111827]/95 backdrop-blur-xs px-3 py-1 rounded-xl shadow-xs border border-slate-100 dark:border-[#2D3748] z-10 hidden sm:block">
-                          <p className="text-[11px] font-black text-slate-800 dark:text-[#F9FAFB] tracking-wide font-serif italic">
+                        <div className="absolute top-2 left-2 rotate-[-8deg] bg-white/95 dark:bg-[#111827]/95 backdrop-blur-xs px-2.5 py-0.5 rounded-xl shadow-xs border border-slate-100 dark:border-[#2D3748] z-10 hidden sm:block">
+                          <p className="text-[10px] sm:text-[11px] font-black text-slate-800 dark:text-[#F9FAFB] tracking-wide font-serif italic">
                             {currentSlide.note}
                           </p>
                         </div>
@@ -429,17 +435,17 @@ export const Home = () => {
                         <img
                           src={currentSlide.image}
                           alt={currentSlide.title}
-                          className="w-full h-full object-cover rounded-3xl shadow-lg border-2 border-white dark:border-[#2D3748]"
+                          className="w-full h-full object-cover rounded-2xl sm:rounded-3xl shadow-md border-2 border-white dark:border-[#2D3748]"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Carousel Controls */}
+                  {/* Carousel Controls (Desktop) */}
                   <button
                     type="button"
                     onClick={() => setHeroSlide((prev) => (prev === 0 ? HERO_SLIDES.length - 1 : prev - 1))}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 dark:bg-[#172033]/90 hover:bg-white dark:hover:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] border border-transparent dark:border-[#2D3748] shadow-md flex items-center justify-center transition-all cursor-pointer z-20"
+                    className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 dark:bg-[#172033]/90 hover:bg-white dark:hover:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] border border-transparent dark:border-[#2D3748] shadow-md items-center justify-center transition-all cursor-pointer z-20"
                     title="Previous Slide"
                   >
                     <ChevronLeft size={18} />
@@ -447,21 +453,21 @@ export const Home = () => {
                   <button
                     type="button"
                     onClick={() => setHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 dark:bg-[#172033]/90 hover:bg-white dark:hover:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] border border-transparent dark:border-[#2D3748] shadow-md flex items-center justify-center transition-all cursor-pointer z-20"
+                    className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 dark:bg-[#172033]/90 hover:bg-white dark:hover:bg-[#172033] text-slate-700 dark:text-[#F9FAFB] border border-transparent dark:border-[#2D3748] shadow-md items-center justify-center transition-all cursor-pointer z-20"
                     title="Next Slide"
                   >
                     <ChevronRight size={18} />
                   </button>
 
-                  {/* Slide Indicators with Progress Animation matching Image 1 */}
-                  <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                  {/* Slide Indicators with Progress Animation */}
+                  <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
                     {HERO_SLIDES.map((_, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => setHeroSlide(idx)}
                         className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                          heroSlide === idx ? 'w-6 bg-sky-600 dark:bg-emerald-400' : 'w-1.5 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600'
+                          heroSlide === idx ? 'w-6 bg-emerald-600 dark:bg-emerald-400' : 'w-1.5 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600'
                         }`}
                         title={`Go to slide ${idx + 1}`}
                       />
@@ -471,16 +477,20 @@ export const Home = () => {
               );
             })()}
 
-            {/* 2. SHOP BY CATEGORY matching Screenshot with Left/Right Scroll and "More" action */}
+            {/* 2. SHOP BY CATEGORY - Responsive & Touch-Swipeable */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">Shop by Category</h3>
-                  <p className="text-xs text-slate-500 dark:text-[#A7B3C5]">Click any category or "More" to move items right to left</p>
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">
+                    Shop by Category
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-[#A7B3C5]">
+                    Fresh farm produce & everyday essentials
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Category Rail Scroll Buttons */}
-                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#111827] p-1 rounded-xl border border-transparent dark:border-[#2D3748]">
+                  {/* Category Rail Scroll Buttons (Desktop) */}
+                  <div className="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-[#111827] p-1 rounded-xl border border-transparent dark:border-[#2D3748]">
                     <button
                       type="button"
                       onClick={() => scrollCategory('left')}
@@ -501,7 +511,7 @@ export const Home = () => {
 
                   <Link
                     to="/shops"
-                    className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 flex items-center gap-1 transition-colors pl-1"
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition-colors pl-1 shrink-0"
                   >
                     View All <ArrowRight size={13} />
                   </Link>
@@ -511,15 +521,15 @@ export const Home = () => {
               {/* Scrollable Category Rail with Snapping and "More" Action */}
               <div
                 ref={categoryScrollRef}
-                className="flex gap-2.5 sm:gap-3 overflow-x-auto pb-2 scroll-smooth scrollbar-none snap-x snap-mandatory"
+                className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scroll-smooth scrollbar-none snap-x snap-mandatory"
               >
                 {/* All Categories Option */}
                 <button
                   type="button"
                   onClick={() => handleSelectCategory('all')}
-                  className={`min-w-[85px] sm:min-w-[90px] p-3 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer shrink-0 snap-start ${
+                  className={`min-w-[76px] sm:min-w-[90px] p-2.5 sm:p-3 rounded-2xl border flex flex-col items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 snap-start ${
                     selectedCategorySlug === 'all'
-                      ? 'border-sky-500 dark:border-emerald-400 bg-sky-50/70 dark:bg-[#12352D] ring-2 ring-sky-200 dark:ring-emerald-500/30 shadow-xs'
+                      ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50/70 dark:bg-[#12352D] ring-2 ring-emerald-200 dark:ring-emerald-500/30 shadow-xs'
                       : 'border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-slate-300 dark:hover:border-emerald-500/50 hover:bg-slate-50 dark:hover:bg-[#111827]'
                   }`}
                 >
@@ -534,9 +544,9 @@ export const Home = () => {
                       key={cat.slug}
                       type="button"
                       onClick={() => handleSelectCategory(cat.slug)}
-                      className={`min-w-[85px] sm:min-w-[90px] p-3 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer shrink-0 snap-start ${
+                      className={`min-w-[76px] sm:min-w-[90px] p-2.5 sm:p-3 rounded-2xl border flex flex-col items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 snap-start ${
                         isSelected
-                          ? 'border-sky-500 dark:border-emerald-400 bg-sky-50/70 dark:bg-[#12352D] ring-2 ring-sky-200 dark:ring-emerald-500/30 shadow-xs'
+                          ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50/70 dark:bg-[#12352D] ring-2 ring-emerald-200 dark:ring-emerald-500/30 shadow-xs'
                           : 'border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-slate-300 dark:hover:border-emerald-500/50 hover:bg-slate-50 dark:hover:bg-[#111827]'
                       }`}
                     >
@@ -548,15 +558,15 @@ export const Home = () => {
                   );
                 })}
 
-                {/* Dedicated "More" (⋯) Button matching Screenshot in Image 2 */}
+                {/* Dedicated "More" (⋯) Button */}
                 <button
                   type="button"
                   onClick={handleCategoryMoreClick}
-                  className="min-w-[85px] sm:min-w-[90px] p-3 rounded-2xl border-2 border-sky-400 dark:border-emerald-500/60 bg-sky-50/60 dark:bg-[#12352D] hover:bg-sky-100 dark:hover:bg-[#12352D]/80 text-sky-700 dark:text-emerald-300 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer shrink-0 snap-start shadow-xs group"
+                  className="min-w-[76px] sm:min-w-[90px] p-2.5 sm:p-3 rounded-2xl border-2 border-emerald-400 dark:border-emerald-500/60 bg-emerald-50/60 dark:bg-[#12352D] hover:bg-emerald-100 dark:hover:bg-[#12352D]/80 text-emerald-700 dark:text-emerald-300 flex flex-col items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 snap-start shadow-xs group"
                   title="Click to move categories and products right to left"
                 >
                   <span className="text-2xl sm:text-3xl font-black group-hover:scale-110 transition-transform">⋯</span>
-                  <span className="text-[11px] font-black text-sky-800 dark:text-emerald-200 text-center flex items-center gap-0.5">
+                  <span className="text-[11px] font-black text-emerald-800 dark:text-emerald-200 text-center flex items-center gap-0.5">
                     More <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
                   </span>
                 </button>
@@ -566,15 +576,15 @@ export const Home = () => {
             {/* 3. NEARBY SHOPS matching Screenshot */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">Nearby Shops</h3>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">Nearby Shops</h3>
                 <Link
                   to="/shops"
-                  className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 flex items-center gap-1 transition-colors"
+                  className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition-colors"
                 >
                   View All <ArrowRight size={13} />
                 </Link>
               </div>
-              <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mb-4">Find fresh products from shops near you</p>
+              <p className="text-xs text-slate-500 dark:text-[#A7B3C5] mb-3 sm:mb-4">Find fresh products from shops near you</p>
 
               {loadingShops ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -619,7 +629,7 @@ export const Home = () => {
                         <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <MapPin size={13} className="text-sky-600 dark:text-emerald-400 shrink-0" />
+                              <MapPin size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                               <h4 className="text-sm font-black text-slate-900 dark:text-[#F9FAFB] truncate">{shop.shopName}</h4>
                             </div>
 
@@ -640,7 +650,7 @@ export const Home = () => {
                             {/* Service Badges */}
                             <div className="flex items-center gap-3 text-[11px] font-bold text-slate-600 dark:text-[#A7B3C5] mt-2">
                               <span className="flex items-center gap-1">
-                                <Truck size={12} className="text-sky-600 dark:text-emerald-400" /> Delivery
+                                <Truck size={12} className="text-emerald-600 dark:text-emerald-400" /> Delivery
                               </span>
                               <span className="flex items-center gap-1">
                                 <ShoppingBag size={12} className="text-purple-600 dark:text-purple-400" /> Pickup
@@ -651,7 +661,7 @@ export const Home = () => {
                           {/* Action Button */}
                           <Link
                             to={`/shops/${shop._id}`}
-                            className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black text-xs text-center shadow-md shadow-sky-600/20 dark:shadow-emerald-950/40 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black text-xs text-center shadow-md shadow-emerald-600/20 dark:shadow-emerald-950/40 transition-all flex items-center justify-center gap-1 cursor-pointer"
                           >
                             View Shop <ArrowRight size={13} />
                           </Link>
@@ -671,7 +681,7 @@ export const Home = () => {
                     <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-[#F9FAFB] tracking-tight">
                       All Grocery Products
                     </h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-sky-100 dark:bg-[#12352D] text-sky-800 dark:text-emerald-300 text-[11px] font-black uppercase tracking-wider">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-[#12352D] text-emerald-800 dark:text-emerald-300 text-[11px] font-black uppercase tracking-wider">
                       {filteredProducts.length} items
                     </span>
                   </div>
@@ -688,7 +698,7 @@ export const Home = () => {
                       onClick={() => setProductViewMode('grid')}
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                         productViewMode === 'grid'
-                          ? 'bg-white dark:bg-[#172033] text-sky-700 dark:text-emerald-400 shadow-2xs dark:shadow-none font-black'
+                          ? 'bg-white dark:bg-[#172033] text-emerald-700 dark:text-emerald-400 shadow-2xs dark:shadow-none font-black'
                           : 'text-slate-600 dark:text-[#A7B3C5] hover:text-slate-900 dark:hover:text-[#F9FAFB]'
                       }`}
                       title="Show all products in responsive grid"
@@ -702,7 +712,7 @@ export const Home = () => {
                       onClick={() => setProductViewMode('carousel')}
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                         productViewMode === 'carousel'
-                          ? 'bg-white dark:bg-[#172033] text-sky-700 dark:text-emerald-400 shadow-2xs dark:shadow-none font-black'
+                          ? 'bg-white dark:bg-[#172033] text-emerald-700 dark:text-emerald-400 shadow-2xs dark:shadow-none font-black'
                           : 'text-slate-600 dark:text-[#A7B3C5] hover:text-slate-900 dark:hover:text-[#F9FAFB]'
                       }`}
                       title="Browse products in horizontal slider"
@@ -736,7 +746,7 @@ export const Home = () => {
 
                   <Link
                     to="/shops"
-                    className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 flex items-center gap-1 transition-colors pl-1"
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition-colors pl-1"
                   >
                     View Shops <ArrowRight size={13} />
                   </Link>
@@ -753,7 +763,7 @@ export const Home = () => {
                   <p className="text-sm font-bold text-slate-700 dark:text-[#F9FAFB]">No products found in this category</p>
                   <button
                     onClick={() => handleSelectCategory('all')}
-                    className="mt-3 text-xs font-bold text-sky-600 dark:text-emerald-400 underline cursor-pointer"
+                    className="mt-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 underline cursor-pointer"
                   >
                     Show all products
                   </button>
@@ -762,7 +772,7 @@ export const Home = () => {
                 /* Responsive Grid displaying the entire products in full view */
                 <div
                   key={`grid-${productAnimKey}`}
-                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-4 pt-2 animate-slide-in-right"
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2.5 sm:gap-4 pt-2 animate-slide-in-right"
                 >
                   {filteredProducts.map((product, pIdx) => {
                     const originalPrice = product.originalPrice || Math.round(product.price * 1.3);
@@ -776,7 +786,7 @@ export const Home = () => {
                     return (
                       <div
                         key={product._id}
-                        className="rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-sky-300 dark:hover:border-emerald-500/50 hover:shadow-lg transition-all p-3.5 flex flex-col justify-between group relative"
+                        className="rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:shadow-lg transition-all p-2.5 sm:p-3.5 flex flex-col justify-between group relative"
                       >
                         {/* Heart / Favourite Toggle Button */}
                         <button
@@ -827,7 +837,7 @@ export const Home = () => {
                           </div>
 
                           {/* Title & Weight */}
-                          <h5 className="text-xs sm:text-sm font-black text-slate-900 dark:text-[#F9FAFB] group-hover:text-sky-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1 leading-snug">
+                          <h5 className="text-xs sm:text-sm font-black text-slate-900 dark:text-[#F9FAFB] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1 leading-snug">
                             {product.name}
                           </h5>
                           <p className="text-[10px] text-slate-400 dark:text-[#A7B3C5] mt-0.5">
@@ -864,11 +874,11 @@ export const Home = () => {
                               Out of Stock
                             </button>
                           ) : cartQty > 0 ? (
-                            <div className="flex items-center justify-between bg-sky-600 dark:bg-emerald-600 text-white rounded-xl p-1 shadow-xs">
+                            <div className="flex items-center justify-between bg-emerald-600 dark:bg-emerald-600 text-white rounded-xl p-1 shadow-xs">
                               <button
                                 type="button"
                                 onClick={() => handleDecrement(product._id, cartQty)}
-                                className="w-6 h-6 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
+                                className="w-6 h-6 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
                               >
                                 <Minus size={12} />
                               </button>
@@ -876,7 +886,7 @@ export const Home = () => {
                               <button
                                 type="button"
                                 onClick={() => handleIncrement(product._id, cartQty, product.stock)}
-                                className="w-6 h-6 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
+                                className="w-6 h-6 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
                               >
                                 <Plus size={12} />
                               </button>
@@ -885,7 +895,7 @@ export const Home = () => {
                             <button
                               type="button"
                               onClick={() => handleAddToCart(product)}
-                              className="w-full py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm shadow-sky-600/20 dark:shadow-emerald-950/40 transition-all cursor-pointer"
+                              className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm shadow-emerald-600/20 dark:shadow-emerald-950/40 transition-all cursor-pointer"
                             >
                               <ShoppingCart size={13} /> Add to Cart
                             </button>
@@ -900,7 +910,7 @@ export const Home = () => {
                 <div
                   ref={productScrollRef}
                   key={`carousel-${productAnimKey}`}
-                  className="flex gap-4 overflow-x-auto pb-4 pt-2 px-1 scroll-smooth scrollbar-none snap-x snap-mandatory animate-slide-in-right"
+                  className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-2 px-1 scroll-smooth scrollbar-none snap-x snap-mandatory animate-slide-in-right"
                 >
                   {filteredProducts.map((product, pIdx) => {
                     const originalPrice = product.originalPrice || Math.round(product.price * 1.3);
@@ -914,7 +924,7 @@ export const Home = () => {
                     return (
                       <div
                         key={product._id}
-                        className="min-w-[185px] sm:min-w-[205px] max-w-[215px] shrink-0 snap-start rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-sky-300 dark:hover:border-emerald-500/50 hover:shadow-lg transition-all p-3.5 flex flex-col justify-between group relative"
+                        className="min-w-[175px] sm:min-w-[205px] max-w-[215px] shrink-0 snap-start rounded-2xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:shadow-lg transition-all p-2.5 sm:p-3.5 flex flex-col justify-between group relative"
                       >
                         {/* Heart / Favourite Toggle Button */}
                         <button
@@ -965,7 +975,7 @@ export const Home = () => {
                           </div>
 
                           {/* Title & Weight */}
-                          <h5 className="text-xs font-black text-slate-900 dark:text-[#F9FAFB] group-hover:text-sky-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1 leading-snug">
+                          <h5 className="text-xs font-black text-slate-900 dark:text-[#F9FAFB] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1 leading-snug">
                             {product.name}
                           </h5>
                           <p className="text-[10px] text-slate-400 dark:text-[#A7B3C5] mt-0.5">
@@ -1002,11 +1012,11 @@ export const Home = () => {
                               Out of Stock
                             </button>
                           ) : cartQty > 0 ? (
-                            <div className="flex items-center justify-between bg-sky-600 dark:bg-emerald-600 text-white rounded-xl p-1 shadow-xs">
+                            <div className="flex items-center justify-between bg-emerald-600 dark:bg-emerald-600 text-white rounded-xl p-1 shadow-xs">
                               <button
                                 type="button"
                                 onClick={() => handleDecrement(product._id, cartQty)}
-                                className="w-6 h-6 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
+                                className="w-6 h-6 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
                               >
                                 <Minus size={12} />
                               </button>
@@ -1014,7 +1024,7 @@ export const Home = () => {
                               <button
                                 type="button"
                                 onClick={() => handleIncrement(product._id, cartQty, product.stock)}
-                                className="w-6 h-6 rounded-lg bg-sky-700 hover:bg-sky-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
+                                className="w-6 h-6 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-bold text-xs"
                               >
                                 <Plus size={12} />
                               </button>
@@ -1023,7 +1033,7 @@ export const Home = () => {
                             <button
                               type="button"
                               onClick={() => handleAddToCart(product)}
-                              className="w-full py-1.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm shadow-sky-600/20 dark:shadow-emerald-950/40 transition-all cursor-pointer"
+                              className="w-full py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm shadow-emerald-600/20 dark:shadow-emerald-950/40 transition-all cursor-pointer"
                             >
                               <ShoppingCart size={13} /> Add to Cart
                             </button>
@@ -1156,19 +1166,19 @@ export const Home = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-400 dark:text-[#A7B3C5] uppercase tracking-wider">My Account</h4>
-                    <p className="text-xs font-black text-slate-900 dark:text-[#F9FAFB] group-hover:text-sky-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <p className="text-xs font-black text-slate-900 dark:text-[#F9FAFB] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                       {isAuthenticated && user ? `Welcome, ${user.name}` : 'Welcome, Guest'}
                     </p>
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-slate-400 group-hover:text-sky-600 dark:group-hover:text-emerald-400 transition-transform group-hover:translate-x-0.5" />
+                <ChevronRight size={18} className="text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
 
             {/* Widget 2: Delivery Address Card */}
             <div className="rounded-3xl border border-slate-200/80 dark:border-[#2D3748] bg-white dark:bg-[#172033] p-4 shadow-xs space-y-2">
               <div className="flex items-start gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-[#12352D] text-sky-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-[#12352D] text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
                   <MapPin size={16} />
                 </div>
                 <div className="flex-1">
@@ -1179,7 +1189,7 @@ export const Home = () => {
                   <button
                     type="button"
                     onClick={() => openAddressModal()}
-                    className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 mt-1.5 inline-block cursor-pointer"
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 mt-1.5 inline-block cursor-pointer"
                   >
                     Change Address
                   </button>
@@ -1193,25 +1203,25 @@ export const Home = () => {
               <div className="space-y-2 text-xs font-bold text-slate-700 dark:text-[#A7B3C5]">
                 <Link
                   to="/orders"
-                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-sky-600 dark:hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                 >
                   <ShoppingBag size={15} className="text-slate-400 dark:text-[#A7B3C5]" /> My Orders
                 </Link>
                 <Link
                   to="/favourites"
-                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-sky-600 dark:hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                 >
                   <Heart size={15} className="text-slate-400 dark:text-[#A7B3C5]" /> Favorites
                 </Link>
                 <Link
                   to="/help"
-                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-sky-600 dark:hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                 >
                   <HelpCircle size={15} className="text-slate-400 dark:text-[#A7B3C5]" /> Help & Support
                 </Link>
                 <Link
                   to="/settings"
-                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-sky-600 dark:hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#111827] hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                 >
                   <Settings size={15} className="text-slate-400 dark:text-[#A7B3C5]" /> Settings
                 </Link>
@@ -1219,8 +1229,8 @@ export const Home = () => {
             </div>
 
             {/* Widget 4: Free Delivery Promotional Banner */}
-            <div className="rounded-3xl bg-gradient-to-br from-sky-50 to-blue-50/60 dark:from-[#172033] dark:to-[#111827] border border-sky-100 dark:border-[#2D3748] p-4 shadow-xs flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-sky-600 dark:bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-sky-600/20 dark:shadow-emerald-950/40">
+            <div className="rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50/60 dark:from-[#172033] dark:to-[#111827] border border-emerald-100 dark:border-[#2D3748] p-4 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-600 dark:bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/20 dark:shadow-emerald-950/40">
                 <Truck size={20} />
               </div>
               <div className="flex-1">
@@ -1240,7 +1250,7 @@ export const Home = () => {
                 <h4 className="text-sm font-black text-slate-900 dark:text-[#F9FAFB]">Your Cart</h4>
                 <Link
                   to="/cart"
-                  className="text-xs font-bold text-sky-600 dark:text-emerald-400 hover:text-sky-700 dark:hover:text-emerald-300 flex items-center gap-0.5"
+                  className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-0.5"
                 >
                   {cart?.items?.length || 0} items <ChevronRight size={14} />
                 </Link>
@@ -1325,7 +1335,7 @@ export const Home = () => {
 
                   <Link
                     to="/cart"
-                    className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black text-xs text-center shadow-md shadow-sky-600/20 dark:shadow-emerald-950/40 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black text-xs text-center shadow-md shadow-emerald-600/20 dark:shadow-emerald-950/40 transition-all flex items-center justify-center gap-1 cursor-pointer"
                   >
                     View Cart <ArrowRight size={13} />
                   </Link>

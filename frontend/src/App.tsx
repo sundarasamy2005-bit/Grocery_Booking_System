@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { useCartStore } from './store/cartStore';
 import { auth } from './config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -37,8 +38,10 @@ const App = () => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         await syncUser();
+        useCartStore.getState().fetchCart();
       } else {
         useAuthStore.setState({ user: null, isAuthenticated: false, isLoading: false });
+        useCartStore.getState().fetchCart();
       }
     });
 
@@ -75,19 +78,8 @@ const App = () => {
           element={!isAuthenticated ? <Register /> : <Navigate to={getHomeForRole(user?.role)} replace />}
         />
 
-        {/* Customer / Role-Aware Home Route */}
-        <Route
-          path="/"
-          element={
-            isAuthenticated && user?.role === 'shopOwner' ? (
-              <Navigate to="/shop/dashboard" replace />
-            ) : isAuthenticated && user?.role === 'admin' ? (
-              <Navigate to="/admin/dashboard" replace />
-            ) : (
-              <Home />
-            )
-          }
-        />
+        {/* Customer Home Route (Universal customer view for all users, with desktop navtags for admin/shop owner) */}
+        <Route path="/" element={<Home />} />
         <Route path="/landing" element={<Home />} />
         <Route path="/shops" element={<ShopList />} />
         <Route path="/shops/:shopId" element={<ShopDetails />} />

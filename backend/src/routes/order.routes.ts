@@ -12,10 +12,10 @@ router.use(authMiddleware);
 // Shop owner routes
 router.get('/shop', requireRole('shopOwner', 'admin'), orderController.getShopOrders);
 
-// Customer routes
-router.post('/', requireRole('customer'), orderController.createOrder);
-router.get('/my', requireRole('customer'), orderController.getMyOrders);
-router.patch('/:id/cancel', requireRole('customer'), orderController.cancelOrder);
+// Customer / order placement routes (accessible to customer, admin, and shopOwner)
+router.post('/', requireRole('customer', 'admin', 'shopOwner'), orderController.createOrder);
+router.get('/my', requireRole('customer', 'admin', 'shopOwner'), orderController.getMyOrders);
+router.patch('/:id/cancel', requireRole('customer', 'admin', 'shopOwner'), orderController.cancelOrder);
 
 // Shared — order by ID (this must come LAST among GET routes)
 router.get('/:id', orderController.getOrderById);
